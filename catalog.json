@@ -1,33 +1,1263 @@
 [
   {
-    "id": "skullector-killer-klowns-shorty-jmg88",
-    "name": "Monster High Skullector Killer Klowns from Outer Space — Shorty",
-    "character": "Shorty",
-    "series": "Skullector",
-    "releaseYear": 2025,
-    "mattelCode": "JMG88",
+    "id": "mh-w2558",
+    "name": "Monster High Frankie Stein",
+    "character": "Frankie Stein",
+    "series": "Classroom",
+    "releaseYear": 2011,
+    "mattelCode": "W2558",
     "codes": [
-      { "type": "mattel", "value": "JMG88" },
-      { "type": "carton", "value": "JMG88-9564" },
-      { "type": "upc", "value": "194735376766" }
+      {
+        "type": "mattel",
+        "value": "W2558"
+      }
     ],
-    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-killer-klowns-doll-jmg88",
-    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Skullector"
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
   },
   {
-    "id": "skullector-corpse-bride-emily-jdr67",
-    "name": "Monster High Skullector Corpse Bride — Emily",
-    "character": "Emily",
-    "series": "Skullector",
-    "releaseYear": 2024,
-    "mattelCode": "JDR67",
+    "id": "mh-w2557",
+    "name": "Monster High Ghoulia Yelps",
+    "character": "Ghoulia Yelps",
+    "series": "Classroom",
+    "releaseYear": 2011,
+    "mattelCode": "W2557",
     "codes": [
-      { "type": "mattel", "value": "JDR67" },
-      { "type": "carton", "value": "JDR67-9564" },
-      { "type": "upc", "value": "194735288816" }
+      {
+        "type": "mattel",
+        "value": "W2557"
+      }
     ],
-    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-corpse-bride-doll-jdr67",
-    "referenceUrl": "https://mhcollector.com/"
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-w2560",
+    "name": "Monster High Lagoona Blue",
+    "character": "Lagoona Blue",
+    "series": "Classroom",
+    "releaseYear": 2011,
+    "mattelCode": "W2560",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "W2560"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-v7976",
+    "name": "Monster High Draculaura",
+    "character": "Draculaura",
+    "series": "Dead Tired",
+    "releaseYear": 2011,
+    "mattelCode": "V7976",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "V7976"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-v7975",
+    "name": "Monster High Frankie Stein",
+    "character": "Frankie Stein",
+    "series": "Dead Tired",
+    "releaseYear": 2011,
+    "mattelCode": "V7975",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "V7975"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-v7973",
+    "name": "Monster High Ghoulia Yelps",
+    "character": "Ghoulia Yelps",
+    "series": "Dead Tired",
+    "releaseYear": 2011,
+    "mattelCode": "V7973",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "V7973"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-v7988",
+    "name": "Monster High Abbey Bominable",
+    "character": "Abbey Bominable",
+    "series": "School’s Out",
+    "releaseYear": 2011,
+    "mattelCode": "V7988",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "V7988"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-v7990",
+    "name": "Monster High Clawdeen Wolf",
+    "character": "Clawdeen Wolf",
+    "series": "School’s Out",
+    "releaseYear": 2011,
+    "mattelCode": "V7990",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "V7990"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-v7991",
+    "name": "Monster High Cleo de Nile",
+    "character": "Cleo de Nile",
+    "series": "School’s Out",
+    "releaseYear": 2011,
+    "mattelCode": "V7991",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "V7991"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-v7989",
+    "name": "Monster High Frankie Stein",
+    "character": "Frankie Stein",
+    "series": "School’s Out",
+    "releaseYear": 2011,
+    "mattelCode": "V7989",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "V7989"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-w2822",
+    "name": "Monster High Lagoona Blue",
+    "character": "Lagoona Blue",
+    "series": "School’s Out",
+    "releaseYear": 2011,
+    "mattelCode": "W2822",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "W2822"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-w9192",
+    "name": "Monster High Clawd Wolf",
+    "character": "Clawd Wolf",
+    "series": "Sweet 1600",
+    "releaseYear": 2011,
+    "mattelCode": "W9192",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "W9192"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-w9191",
+    "name": "Monster High Clawdeen Wolf",
+    "character": "Clawdeen Wolf",
+    "series": "Sweet 1600",
+    "releaseYear": 2011,
+    "mattelCode": "W9191",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "W9191"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-w9189",
+    "name": "Monster High Draculaura",
+    "character": "Draculaura",
+    "series": "Sweet 1600",
+    "releaseYear": 2011,
+    "mattelCode": "W9189",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "W9189"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-w9190",
+    "name": "Monster High Frankie Stein",
+    "character": "Frankie Stein",
+    "series": "Sweet 1600",
+    "releaseYear": 2011,
+    "mattelCode": "W9190",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "W9190"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0431",
+    "name": "Monster High Howleen Wolf",
+    "character": "Howleen Wolf",
+    "series": "Dance Class",
+    "releaseYear": 2012,
+    "mattelCode": "Y0431",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0431"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0434",
+    "name": "Monster High Lagoona Blue",
+    "character": "Lagoona Blue",
+    "series": "Dance Class",
+    "releaseYear": 2012,
+    "mattelCode": "Y0434",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0434"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0433",
+    "name": "Monster High Operetta",
+    "character": "Operetta",
+    "series": "Dance Class",
+    "releaseYear": 2012,
+    "mattelCode": "Y0433",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0433"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0432",
+    "name": "Monster High Robecca Steam",
+    "character": "Robecca Steam",
+    "series": "Dance Class",
+    "releaseYear": 2012,
+    "mattelCode": "Y0432",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0432"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0406",
+    "name": "Monster High Frankie Stein",
+    "character": "Frankie Stein",
+    "series": "My Wardrobe and I",
+    "releaseYear": 2012,
+    "mattelCode": "Y0406",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0406"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0408",
+    "name": "Monster High Ghoulia Yelps",
+    "character": "Ghoulia Yelps",
+    "series": "My Wardrobe and I",
+    "releaseYear": 2012,
+    "mattelCode": "Y0408",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0408"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0405",
+    "name": "Monster High Operetta",
+    "character": "Operetta",
+    "series": "My Wardrobe and I",
+    "releaseYear": 2012,
+    "mattelCode": "Y0405",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0405"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0407",
+    "name": "Monster High Robecca Steam",
+    "character": "Robecca Steam",
+    "series": "My Wardrobe and I",
+    "releaseYear": 2012,
+    "mattelCode": "Y0407",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0407"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0379",
+    "name": "Monster High Clawdeen Wolf",
+    "character": "Clawdeen Wolf",
+    "series": "Scaris: City of Frights",
+    "releaseYear": 2012,
+    "mattelCode": "Y0379",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0379"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0380",
+    "name": "Monster High Frankie Stein",
+    "character": "Frankie Stein",
+    "series": "Scaris: City of Frights",
+    "releaseYear": 2012,
+    "mattelCode": "Y0380",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0380"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0378",
+    "name": "Monster High Jinafire Long",
+    "character": "Jinafire Long",
+    "series": "Scaris: City of Frights",
+    "releaseYear": 2012,
+    "mattelCode": "Y0378",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0378"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0377",
+    "name": "Monster High Skelita Calaveras",
+    "character": "Skelita Calaveras",
+    "series": "Scaris: City of Frights",
+    "releaseYear": 2012,
+    "mattelCode": "Y0377",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0377"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0393",
+    "name": "Monster High Abbey Bominable",
+    "character": "Abbey Bominable",
+    "series": "Signature",
+    "releaseYear": 2012,
+    "mattelCode": "Y0393",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0393"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0395",
+    "name": "Monster High Deuce Gorgon",
+    "character": "Deuce Gorgon",
+    "series": "Signature",
+    "releaseYear": 2012,
+    "mattelCode": "Y0395",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0395"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0396",
+    "name": "Monster High Draculaura",
+    "character": "Draculaura",
+    "series": "Signature",
+    "releaseYear": 2012,
+    "mattelCode": "Y0396",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0396"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y0394",
+    "name": "Monster High Ghoulia Yelps",
+    "character": "Ghoulia Yelps",
+    "series": "Signature",
+    "releaseYear": 2012,
+    "mattelCode": "Y0394",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y0394"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y7709",
+    "name": "Monster High Gigi Grant",
+    "character": "Gigi Grant",
+    "series": "13 Wishes",
+    "releaseYear": 2013,
+    "mattelCode": "Y7709",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y7709"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y7710",
+    "name": "Monster High Howleen Wolf",
+    "character": "Howleen Wolf",
+    "series": "13 Wishes",
+    "releaseYear": 2013,
+    "mattelCode": "Y7710",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y7710"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-y7708",
+    "name": "Monster High Twyla Boogeyman",
+    "character": "Twyla Boogeyman",
+    "series": "13 Wishes",
+    "releaseYear": 2013,
+    "mattelCode": "Y7708",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "Y7708"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-bbc11",
+    "name": "Monster High Lagoona Blue",
+    "character": "Lagoona Blue",
+    "series": "Ghoul's Night Out",
+    "releaseYear": 2013,
+    "mattelCode": "BBC11",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "BBC11"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-bbc10",
+    "name": "Monster High Rochelle Goyle",
+    "character": "Rochelle Goyle",
+    "series": "Ghoul's Night Out",
+    "releaseYear": 2013,
+    "mattelCode": "BBC10",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "BBC10"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-bbc12",
+    "name": "Monster High Spectra Vondergeist",
+    "character": "Spectra Vondergeist",
+    "series": "Ghoul's Night Out",
+    "releaseYear": 2013,
+    "mattelCode": "BBC12",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "BBC12"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-bdd88",
+    "name": "Monster High Clawdia Wolf",
+    "character": "Clawdia Wolf",
+    "series": "Frights, Camera, Action!",
+    "releaseYear": 2014,
+    "mattelCode": "BDD88",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "BDD88"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-bdd87",
+    "name": "Monster High Elissabat",
+    "character": "Elissabat",
+    "series": "Frights, Camera, Action!",
+    "releaseYear": 2014,
+    "mattelCode": "BDD87",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "BDD87"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-bdd86",
+    "name": "Monster High Honey Swamp",
+    "character": "Honey Swamp",
+    "series": "Frights, Camera, Action!",
+    "releaseYear": 2014,
+    "mattelCode": "BDD86",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "BDD86"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-bdd85",
+    "name": "Monster High Viperine Gorgon",
+    "character": "Viperine Gorgon",
+    "series": "Frights, Camera, Action!",
+    "releaseYear": 2014,
+    "mattelCode": "BDD85",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "BDD85"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-cdc08",
+    "name": "Monster High Catrine DeMew",
+    "character": "Catrine DeMew",
+    "series": "Gloom and Bloom",
+    "releaseYear": 2014,
+    "mattelCode": "CDC08",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "CDC08"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-cdc06",
+    "name": "Monster High Jane Boolittle",
+    "character": "Jane Boolittle",
+    "series": "Gloom and Bloom",
+    "releaseYear": 2014,
+    "mattelCode": "CDC06",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "CDC06"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-cdc07",
+    "name": "Monster High Venus McFlytrap",
+    "character": "Venus McFlytrap",
+    "series": "Gloom and Bloom",
+    "releaseYear": 2014,
+    "mattelCode": "CDC07",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "CDC07"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-bdd78",
+    "name": "Monster High Clawdeen Wolf",
+    "character": "Clawdeen Wolf",
+    "series": "New Scaremester",
+    "releaseYear": 2014,
+    "mattelCode": "BDD78",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "BDD78"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-bdd80",
+    "name": "Monster High Jinafire Long",
+    "character": "Jinafire Long",
+    "series": "New Scaremester",
+    "releaseYear": 2014,
+    "mattelCode": "BDD80",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "BDD80"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-cdc33",
+    "name": "Monster High Kiyomi Haunterly",
+    "character": "Kiyomi Haunterly",
+    "series": "Haunted",
+    "releaseYear": 2015,
+    "mattelCode": "CDC33",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "CDC33"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-cdc32",
+    "name": "Monster High River Styxx",
+    "character": "River Styxx",
+    "series": "Haunted",
+    "releaseYear": 2015,
+    "mattelCode": "CDC32",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "CDC32"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-cdc31",
+    "name": "Monster High Vandala Doubloons",
+    "character": "Vandala Doubloons",
+    "series": "Haunted",
+    "releaseYear": 2015,
+    "mattelCode": "CDC31",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "CDC31"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hhk52",
+    "name": "Monster High Clawdeen Wolf",
+    "character": "Clawdeen Wolf",
+    "series": "Generation 3 - Core",
+    "releaseYear": 2022,
+    "mattelCode": "HHK52",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HHK52"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hhk54",
+    "name": "Monster High Cleo de Nile",
+    "character": "Cleo de Nile",
+    "series": "Generation 3 - Core",
+    "releaseYear": 2022,
+    "mattelCode": "HHK54",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HHK54"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hhk56",
+    "name": "Monster High Deuce Gorgon",
+    "character": "Deuce Gorgon",
+    "series": "Generation 3 - Core",
+    "releaseYear": 2022,
+    "mattelCode": "HHK56",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HHK56"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hhk51",
+    "name": "Monster High Draculaura",
+    "character": "Draculaura",
+    "series": "Generation 3 - Core",
+    "releaseYear": 2022,
+    "mattelCode": "HHK51",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HHK51"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hhk53",
+    "name": "Monster High Frankie Stein",
+    "character": "Frankie Stein",
+    "series": "Generation 3 - Core",
+    "releaseYear": 2022,
+    "mattelCode": "HHK53",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HHK53"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hhk58",
+    "name": "Monster High Ghoulia Yelps",
+    "character": "Ghoulia Yelps",
+    "series": "Generation 3 - Core",
+    "releaseYear": 2022,
+    "mattelCode": "HHK58",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HHK58"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hhk55",
+    "name": "Monster High Lagoona Blue",
+    "character": "Lagoona Blue",
+    "series": "Generation 3 - Core",
+    "releaseYear": 2022,
+    "mattelCode": "HHK55",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HHK55"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hhk57",
+    "name": "Monster High Toralei Stripe",
+    "character": "Toralei Stripe",
+    "series": "Generation 3 - Core",
+    "releaseYear": 2022,
+    "mattelCode": "HHK57",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HHK57"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf84",
+    "name": "Monster High Frankie Stein",
+    "character": "Frankie Stein",
+    "series": "Amped Up",
+    "releaseYear": 2023,
+    "mattelCode": "HNF84",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF84"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf90",
+    "name": "Monster High Draculaura",
+    "character": "Draculaura",
+    "series": "Bite in the Park",
+    "releaseYear": 2023,
+    "mattelCode": "HNF90",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF90"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hlp87",
+    "name": "Monster High Twyla Boogeyman",
+    "character": "Twyla Boogeyman",
+    "series": "Creepover Party",
+    "releaseYear": 2023,
+    "mattelCode": "HLP87",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HLP87"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hrb26",
+    "name": "Monster High Draculaura, Clawdeen Wolf, Frankie Stein",
+    "character": "Draculaura, Clawdeen, Frankie",
+    "series": "Day Out 3-Pack",
+    "releaseYear": 2023,
+    "mattelCode": "HRB26",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HRB26"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnp95",
+    "name": "Monster High Cleo de Nile",
+    "character": "Cleo de Nile",
+    "series": "Faboolous Pets",
+    "releaseYear": 2023,
+    "mattelCode": "HNP95",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNP95"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf86",
+    "name": "Monster High Lagoona Blue",
+    "character": "Lagoona Blue",
+    "series": "Fan-Sea",
+    "releaseYear": 2023,
+    "mattelCode": "HNF86",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF86"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf64",
+    "name": "Monster High Abbey Bominable",
+    "character": "Abbey Bominable",
+    "series": "Generation 3 - Core",
+    "releaseYear": 2023,
+    "mattelCode": "HNF64",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF64"
+      }
+    ],
+    "officialUrl": "https://shop.mattel.com/products/monster-high-abbey-bominable-doll-hnf64",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf65",
+    "name": "Monster High Clawd Wolf",
+    "character": "Clawd Wolf",
+    "series": "Generation 3 - Core",
+    "releaseYear": 2023,
+    "mattelCode": "HNF65",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF65"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf69",
+    "name": "Monster High Clawdeen Wolf",
+    "character": "Clawdeen Wolf",
+    "series": "Monster Ball",
+    "releaseYear": 2023,
+    "mattelCode": "HNF69",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF69"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf70",
+    "name": "Monster High Cleo de Nile",
+    "character": "Cleo de Nile",
+    "series": "Monster Ball",
+    "releaseYear": 2023,
+    "mattelCode": "HNF70",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF70"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf68",
+    "name": "Monster High Draculaura",
+    "character": "Draculaura",
+    "series": "Monster Ball",
+    "releaseYear": 2023,
+    "mattelCode": "HNF68",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF68"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf71",
+    "name": "Monster High Lagoona Blue",
+    "character": "Lagoona Blue",
+    "series": "Monster Ball",
+    "releaseYear": 2023,
+    "mattelCode": "HNF71",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF71"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnd85",
+    "name": "Monster High Annabelle",
+    "character": "Annabelle",
+    "series": "Skullector",
+    "releaseYear": 2023,
+    "mattelCode": "HND85",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HND85"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/annabelle-monster-high-skullector-doll-hnd85",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
   },
   {
     "id": "skullector-lost-boys-hrp88",
@@ -37,11 +1267,488 @@
     "releaseYear": 2023,
     "mattelCode": "HRP88",
     "codes": [
-      { "type": "mattel", "value": "HRP88" },
-      { "type": "carton", "value": "HRP88-9893" },
-      { "type": "upc", "value": "194735183463" }
+      {
+        "type": "mattel",
+        "value": "HRP88"
+      },
+      {
+        "type": "carton",
+        "value": "HRP88-9893"
+      },
+      {
+        "type": "upc",
+        "value": "194735183463"
+      }
     ],
     "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-lost-boys-hrp88",
-    "referenceUrl": "https://creations.mattel.com/products/monster-high-skullector-lost-boys-hrp88"
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf74",
+    "name": "Monster High Clawdeen Wolf",
+    "character": "Clawdeen Wolf",
+    "series": "Skulltimate Secrets - Fearidescent",
+    "releaseYear": 2023,
+    "mattelCode": "HNF74",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF74"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf76",
+    "name": "Monster High Cleo de Nile",
+    "character": "Cleo de Nile",
+    "series": "Skulltimate Secrets - Fearidescent",
+    "releaseYear": 2023,
+    "mattelCode": "HNF76",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF76"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf73",
+    "name": "Monster High Draculaura",
+    "character": "Draculaura",
+    "series": "Skulltimate Secrets - Fearidescent",
+    "releaseYear": 2023,
+    "mattelCode": "HNF73",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF73"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf75",
+    "name": "Monster High Frankie Stein",
+    "character": "Frankie Stein",
+    "series": "Skulltimate Secrets - Fearidescent",
+    "releaseYear": 2023,
+    "mattelCode": "HNF75",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF75"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hnf77",
+    "name": "Monster High Lagoona Blue",
+    "character": "Lagoona Blue",
+    "series": "Skulltimate Secrets - Fearidescent",
+    "releaseYear": 2023,
+    "mattelCode": "HNF77",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HNF77"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hxw30",
+    "name": "Monster High Draculaura",
+    "character": "Draculaura",
+    "series": "Fearbook",
+    "releaseYear": 2024,
+    "mattelCode": "HXW30",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HXW30"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hxw32",
+    "name": "Monster High Toralei Stripe",
+    "character": "Toralei Stripe",
+    "series": "Fearbook",
+    "releaseYear": 2024,
+    "mattelCode": "HXW32",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HXW32"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hxw31",
+    "name": "Monster High Twyla Boogeyman",
+    "character": "Twyla Boogeyman",
+    "series": "Fearbook",
+    "releaseYear": 2024,
+    "mattelCode": "HXW31",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HXW31"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hxh76",
+    "name": "Monster High Catty Noir",
+    "character": "Catty Noir",
+    "series": "Generation 3",
+    "releaseYear": 2024,
+    "mattelCode": "HXH76",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HXH76"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hxh77",
+    "name": "Monster High Spectra Vondergeist",
+    "character": "Spectra Vondergeist",
+    "series": "Generation 3",
+    "releaseYear": 2024,
+    "mattelCode": "HXH77",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HXH77"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hxh80",
+    "name": "Monster High Clawdeen Wolf",
+    "character": "Clawdeen Wolf",
+    "series": "Monster Fest",
+    "releaseYear": 2024,
+    "mattelCode": "HXH80",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HXH80"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hxh81",
+    "name": "Monster High Cleo de Nile",
+    "character": "Cleo de Nile",
+    "series": "Monster Fest",
+    "releaseYear": 2024,
+    "mattelCode": "HXH81",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HXH81"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hxh79",
+    "name": "Monster High Frankie Stein",
+    "character": "Frankie Stein",
+    "series": "Monster Fest",
+    "releaseYear": 2024,
+    "mattelCode": "HXH79",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HXH79"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hxh82",
+    "name": "Monster High Lagoona Blue",
+    "character": "Lagoona Blue",
+    "series": "Monster Fest",
+    "releaseYear": 2024,
+    "mattelCode": "HXH82",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HXH82"
+      }
+    ],
+    "officialUrl": null,
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hwv26",
+    "name": "Monster High Creature from the Black Lagoon",
+    "character": "Creature from the Black Lagoon",
+    "series": "Skullector",
+    "releaseYear": 2024,
+    "mattelCode": "HWV26",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HWV26"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-creature-from-the-black-lagoon-doll-hwv26",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "skullector-corpse-bride-emily-jdr67",
+    "name": "Monster High Skullector Corpse Bride — Emily",
+    "character": "Emily",
+    "series": "Skullector",
+    "releaseYear": 2024,
+    "mattelCode": "JDR67",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "JDR67"
+      },
+      {
+        "type": "carton",
+        "value": "JDR67-9564"
+      },
+      {
+        "type": "upc",
+        "value": "194735288816"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-corpse-bride-doll-jdr67",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hxj02",
+    "name": "Monster High Hocus Pocus 3-Pack",
+    "character": "Winifred, Mary, Sarah",
+    "series": "Skullector 3-Pack",
+    "releaseYear": 2024,
+    "mattelCode": "HXJ02",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HXJ02"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-disney-hocus-pocus-skullector-dolls-hxj02",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "set",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-jdr69",
+    "name": "Monster High Alien / Xenomorph",
+    "character": "Xenomorph",
+    "series": "Skullector",
+    "releaseYear": 2025,
+    "mattelCode": "JDR69",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "JDR69"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-alien-doll-jdr69",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hyv99",
+    "name": "Monster High Elvira, Mistress of the Dark",
+    "character": "Elvira",
+    "series": "Skullector",
+    "releaseYear": 2025,
+    "mattelCode": "HYV99",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HYV99"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-elvira-mistress-of-the-dark-doll-hyv99",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hyv94",
+    "name": "Monster High M3GAN",
+    "character": "M3GAN",
+    "series": "Skullector",
+    "releaseYear": 2025,
+    "mattelCode": "HYV94",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HYV94"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-m3gan-doll-hyv94",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "skullector-killer-klowns-shorty-jmg88",
+    "name": "Monster High Skullector Killer Klowns from Outer Space — Shorty",
+    "character": "Shorty",
+    "series": "Skullector",
+    "releaseYear": 2025,
+    "mattelCode": "JMG88",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "JMG88"
+      },
+      {
+        "type": "carton",
+        "value": "JMG88-9564"
+      },
+      {
+        "type": "upc",
+        "value": "194735376766"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-killer-klowns-doll-jmg88",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-hyv97",
+    "name": "Monster High Adelaide and Red 2-Pack",
+    "character": "Adelaide and Red",
+    "series": "Skullector 2-Pack",
+    "releaseYear": 2025,
+    "mattelCode": "HYV97",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "HYV97"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-us-dolls-adelaide-and-red-2-pack-hyv97",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "set",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-grw96",
+    "name": "Monster High Greta Gremlin",
+    "character": "Greta Gremlin",
+    "series": "Skullector",
+    "releaseYear": 2026,
+    "mattelCode": "GRW96",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "GRW96"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-greta-gremlin-doll-grw96",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-jdr68",
+    "name": "Monster High Michael Myers",
+    "character": "Michael Myers",
+    "series": "Skullector",
+    "releaseYear": 2026,
+    "mattelCode": "JDR68",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "JDR68"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-michael-myers-doll-jdr68",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
+  },
+  {
+    "id": "mh-jhk56",
+    "name": "Monster High Skeletor",
+    "character": "Skeletor",
+    "series": "Skullector",
+    "releaseYear": 2026,
+    "mattelCode": "JHK56",
+    "codes": [
+      {
+        "type": "mattel",
+        "value": "JHK56"
+      }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-skeletor-doll-jhk56",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Product_number",
+    "itemType": "doll",
+    "identifierConfidence": "verified-product-number"
   }
 ]

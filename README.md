@@ -18,9 +18,11 @@ Ghoul ID is an independent Monster High collector companion. It is designed to b
 - Official/reference links for seeded product records and unknown-code search.
 - Dark gothic-neon styling, app icon, adaptive icon, and splash screen.
 
-## What's included in this starter catalog
+## Bundled catalog (v1.6.0)
 
-The bundled catalog currently seeds three Skullector entries: Killer Klowns from Outer Space — Shorty (JMG88), Corpse Bride — Emily (JDR67), and The Lost Boys (HRP88). This is a verified starter dataset, **not a complete Monster High database**. Expand `catalog.json` with additional sourced records over time. UPCs should be checked by scanning physical packaging before treating every barcode alias as fully validated. Do not use varying factory/lot identifiers as product IDs unless verified.
+The app now bundles an expanded local catalog of 96 Monster High doll and doll-containing set entries across G1, G3, and collector/Skullector releases. It includes verified product-number records sourced from the Monster High Wiki's Product Number index, and official Mattel links where a matching official product page was verified. Each entry also links to the Wiki product-number index as a reference/fallback. Standalone accessories are excluded.
+
+**Important completeness note:** this is a substantial catalog expansion, not a guarantee that every regional release, reissue, multipack, or historical variant has been captured. Older product listings can disappear, and product numbers may differ by region. Only verified official URLs are included; entries without one rely on the Wiki reference link. UPCs are included only where verified. Do not treat factory/lot codes as product IDs unless confirmed.
 
 ## Project structure
 
