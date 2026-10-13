@@ -1,1 +1,47 @@
-[]
+[
+  {
+    "id": "skullector-killer-klowns-shorty-jmg88",
+    "name": "Monster High Skullector Killer Klowns from Outer Space — Shorty",
+    "character": "Shorty",
+    "series": "Skullector",
+    "releaseYear": 2025,
+    "mattelCode": "JMG88",
+    "codes": [
+      { "type": "mattel", "value": "JMG88" },
+      { "type": "carton", "value": "JMG88-9564" },
+      { "type": "upc", "value": "194735376766" }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-killer-klowns-doll-jmg88",
+    "referenceUrl": "https://monsterhigh.fandom.com/wiki/Skullector"
+  },
+  {
+    "id": "skullector-corpse-bride-emily-jdr67",
+    "name": "Monster High Skullector Corpse Bride — Emily",
+    "character": "Emily",
+    "series": "Skullector",
+    "releaseYear": 2024,
+    "mattelCode": "JDR67",
+    "codes": [
+      { "type": "mattel", "value": "JDR67" },
+      { "type": "carton", "value": "JDR67-9564" },
+      { "type": "upc", "value": "194735288816" }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-corpse-bride-doll-jdr67",
+    "referenceUrl": "https://mhcollector.com/"
+  },
+  {
+    "id": "skullector-lost-boys-hrp88",
+    "name": "Monster High Skullector The Lost Boys Doll",
+    "character": "David-inspired",
+    "series": "Skullector",
+    "releaseYear": 2023,
+    "mattelCode": "HRP88",
+    "codes": [
+      { "type": "mattel", "value": "HRP88" },
+      { "type": "carton", "value": "HRP88-9893" },
+      { "type": "upc", "value": "194735183463" }
+    ],
+    "officialUrl": "https://creations.mattel.com/products/monster-high-skullector-lost-boys-hrp88",
+    "referenceUrl": "https://creations.mattel.com/products/monster-high-skullector-lost-boys-hrp88"
+  }
+]

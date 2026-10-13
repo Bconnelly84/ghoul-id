@@ -1,20 +1,41 @@
 {
   "expo": {
-    "name": "Monster High Scanner",
-    "slug": "monster-high-scanner",
-    "version": "1.0.0",
+    "name": "Ghoul ID",
+    "slug": "ghoul-id",
+    "version": "1.4.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#100d17"
+    },
     "android": {
-      "package": "com.collector.monsterhighscanner",
-      "versionCode": 1
+      "package": "com.bconnelly84.ghoulid",
+      "versionCode": 5,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#100d17"
+      },
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "plugins": [
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Monster High Scanner to scan doll box codes.",
+          "cameraPermission": "Allow Ghoul ID to scan doll box barcodes.",
           "barcodeScannerEnabled": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Ghoul ID to choose product photos and read printed text from box images.",
+          "cameraPermission": "Allow Ghoul ID to photograph dolls and read printed box text.",
+          "microphonePermission": false
         }
       ]
     ]
