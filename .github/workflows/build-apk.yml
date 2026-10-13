@@ -1,0 +1,42 @@
+
+name: Build Ghoul ID APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v4
+
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build APK
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleRelease
+
+      - name: Save APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghoul-id-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 14
