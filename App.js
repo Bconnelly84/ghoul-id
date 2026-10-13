@@ -8,8 +8,9 @@ import * as FileSystem from 'expo-file-system/legacy';
 import TextRecognition from '@react-native-ml-kit/text-recognition';
 
 const CATALOG = require('./catalog.json');
-const STORE_KEY = 'ghoul-id-v2';
-const LEGACY_STORE_KEY = 'ghoul-id-v1';
+const STORE_KEY = 'ghoul-id-v3';
+const LEGACY_STORE_KEYS = ['ghoul-id-v2', 'ghoul-id-v1'];
+const STORAGE_SCHEMA_VERSION = 1;
 const PINK = '#ff36b9';
 const TEAL = '#20d9e8';
 const PURPLE = '#8b45d6';
@@ -104,29 +105,51 @@ export default function App() {
   const [ocrImageUri, setOcrImageUri] = useState(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [storageSafeToWrite, setStorageSafeToWrite] = useState(false);
+  const [storageWarning, setStorageWarning] = useState(false);
 
   useEffect(() => {
+    let active = true;
     (async () => {
       try {
-        const raw = (await AsyncStorage.getItem(STORE_KEY)) || (await AsyncStorage.getItem(LEGACY_STORE_KEY));
+        let raw = await AsyncStorage.getItem(STORE_KEY);
+        if (!raw) {
+          for (const legacyKey of LEGACY_STORE_KEYS) {
+            raw = await AsyncStorage.getItem(legacyKey);
+            if (raw) break;
+          }
+        }
         if (raw) {
           const saved = JSON.parse(raw);
+          if (!saved || typeof saved !== 'object' || Array.isArray(saved)) throw new Error('Saved collection has an unexpected format.');
+          if (!active) return;
           setOwned(Array.isArray(saved.owned) ? saved.owned : []);
           setWanted(Array.isArray(saved.wanted) ? saved.wanted : []);
           setFavorites(Array.isArray(saved.favorites) ? saved.favorites : []);
-          setNotes(saved.notes && typeof saved.notes === 'object' ? saved.notes : {});
+          setNotes(saved.notes && typeof saved.notes === 'object' && !Array.isArray(saved.notes) ? saved.notes : {});
           setHistory(Array.isArray(saved.history) ? saved.history : []);
-          setPhotos(saved.photos && typeof saved.photos === 'object' ? saved.photos : {});
+          setPhotos(saved.photos && typeof saved.photos === 'object' && !Array.isArray(saved.photos) ? saved.photos : {});
         }
-      } catch (_) {}
-      setLoaded(true);
+        if (active) setStorageSafeToWrite(true);
+      } catch (_) {
+        // Never overwrite a possibly recoverable collection if its stored JSON is corrupt.
+        if (active) { setStorageSafeToWrite(false); setStorageWarning(true); }
+      } finally {
+        if (active) setLoaded(true);
+      }
     })();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
-    AsyncStorage.setItem(STORE_KEY, JSON.stringify({ owned, wanted, favorites, notes, history, photos })).catch(() => {});
-  }, [loaded, owned, wanted, favorites, notes, history, photos]);
+    if (!loaded || !storageSafeToWrite) return;
+    AsyncStorage.setItem(STORE_KEY, JSON.stringify({ schemaVersion: STORAGE_SCHEMA_VERSION, owned, wanted, favorites, notes, history, photos }))
+      .catch(() => { setStorageWarning(true); });
+  }, [loaded, storageSafeToWrite, owned, wanted, favorites, notes, history, photos]);
+
+  useEffect(() => {
+    if (storageWarning) Alert.alert('Collection storage warning', 'Ghoul ID could not safely read or save the saved collection. To protect your data, it has paused automatic writes. Do not clear app data; we should investigate before attempting recovery.');
+  }, [storageWarning]);
 
   const product = useMemo(() => code ? findCatalogMatch(code) : null, [code]);
   const productId = p => p.id || p.mattelCode || p.name;
@@ -163,16 +186,17 @@ export default function App() {
   const goHome = () => { setScanning(false); setScreen('Home'); };
 
   const persistImage = async uri => {
-    try {
-      if (!FileSystem.documentDirectory) return uri;
-      const dir = FileSystem.documentDirectory + 'ghoul-photos/';
-      await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(() => {});
-      const extMatch = String(uri).match(/\.(jpg|jpeg|png|webp)(?:\?|$)/i);
-      const ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
-      const dest = dir + 'ghoul-' + Date.now() + '.' + ext;
-      await FileSystem.copyAsync({ from: uri, to: dest });
-      return dest;
-    } catch (_) { return uri; }
+    if (!uri) throw new Error('No image URI was provided.');
+    if (!FileSystem.documentDirectory) throw new Error('Permanent app storage is unavailable.');
+    const dir = FileSystem.documentDirectory + 'ghoul-photos/';
+    await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+    const extMatch = String(uri).match(/\.(jpg|jpeg|png|webp)(?:\?|$)/i);
+    const ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
+    const dest = dir + 'ghoul-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+    await FileSystem.copyAsync({ from: uri, to: dest });
+    const info = await FileSystem.getInfoAsync(dest);
+    if (!info.exists) throw new Error('Image copy could not be verified.');
+    return dest;
   };
 
   const readPrintedText = async uri => {
@@ -211,7 +235,7 @@ export default function App() {
       const savedUri = await persistImage(result.assets[0].uri);
       setPhotos(prev => ({ ...prev, [targetId]: savedUri }));
       Alert.alert('Photo saved', 'Your product photo has been saved to this device for this item.');
-    } catch (_) { Alert.alert('Could not save photo', 'Try taking another photo or selecting a different image.'); }
+    } catch (_) { Alert.alert('Photo not saved', 'Ghoul ID could not copy this image into permanent app storage. Try another photo. The temporary image was not saved to your collection.'); }
   };
 
   const askForProductPhoto = targetId => Alert.alert('Add product photo', 'Take a new photo or choose one from your library.', [

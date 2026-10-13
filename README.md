@@ -62,6 +62,14 @@ Ghoul ID is an independent fan/collector project and is not affiliated with or e
 Printed-text OCR now ranks exact catalog matches first, then valid UPC/EAN/GTIN values, then likely Mattel-style model numbers. It normalizes valid UPC/EAN/GTIN equivalents (including a leading-zero UPC form commonly printed in carton GTIN-14 strings), while refusing to identify a doll from arbitrary numbers. Secondary packaging/lot identifiers such as HF batch codes are excluded from suggestions. OCR is still a suggestion workflow: verify the printed code before relying on a match.
 
 
-## v1.4.0 resale research
+## v1.5.0 resale research
 
 Scan results and doll details include a dynamic **View eBay Sold Listings** link. The query uses the matched product name, character, Mattel code, and/or scanned code, and opens eBay with sold/completed filters. Ghoul ID does not scrape eBay, calculate market values, or represent asking prices as completed sales; availability and sign-in behavior are controlled by eBay.
+
+
+## v1.5.0 storage safeguards
+
+- Adds a storage schema version and reads the previous v2/v1 keys during migration.
+- Pauses automatic writes if saved collection JSON cannot be parsed, to avoid overwriting potentially recoverable data.
+- Warns if collection storage fails.
+- Verifies saved product photos were copied into the app documents directory; temporary picker URIs are no longer silently accepted as permanent saves.
