@@ -6,10 +6,10 @@ Ghoul ID is an independent Monster High collector companion. It is designed to b
 
 ## Included functionality
 
-- Live camera barcode scanner using Expo Camera, with flashlight toggle and manual code entry.
+- Live camera view with repeated on-device OCR snapshots that detect multiple printed product codes, plus manual code entry and flashlight toggle. Barcode decoding is not used as the primary identification path.
 - UPC/EAN and common barcode formats supported by the camera module.
 - Normalized code matching for UPCs and printed Mattel/product numbers.
-- Results screen for catalog matches and a careful unknown-code fallback.
+- Results screen with official Mattel, Monster High Wiki, and eBay links; Google search is the general fallback. Unknown codes can be saved as unidentified owned or wishlist entries.
 - **SCAN NEXT ITEM** on the results screen to start another scan without returning to Home.
 - Searchable catalog with series filters.
 - Local owned list, wishlist, favorites, and private notes.
@@ -18,7 +18,7 @@ Ghoul ID is an independent Monster High collector companion. It is designed to b
 - Official/reference links for seeded product records and unknown-code search.
 - Dark gothic-neon styling, app icon, adaptive icon, and splash screen.
 
-## Bundled catalog (v1.6.0)
+## Bundled catalog (v1.7.0)
 
 The app now bundles an expanded local catalog of 96 Monster High doll and doll-containing set entries across G1, G3, and collector/Skullector releases. It includes verified product-number records sourced from the Monster High Wiki's Product Number index, and official Mattel links where a matching official product page was verified. Each entry also links to the Wiki product-number index as a reference/fallback. Standalone accessories are excluded.
 

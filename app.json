@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ghoul ID",
     "slug": "ghoul-id",
-    "version": "1.6.1",
+    "version": "1.7.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.bconnelly84.ghoulid",
-      "versionCode": 7,
+      "versionCode": 8,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#100d17"
