@@ -41,3 +41,8 @@ An Android build can run in GitHub Actions without a paid API or dedicated serve
 ## Catalog thumbnails and Android navigation safety (v2.5.0)
 
 The app uses Android/iOS safe-area insets for its bottom tab bar. Catalog records support `officialImageUrl`, `wikiImageUrl`, and `imageUrl`; official Mattel product images are preferred, with Wiki page images as a fallback. The scheduled catalog workflow runs `scripts/enrich_catalog_images.py` to discover and publish image URLs without rehosting the image files. Run `npm run test:images` to test the priority/fallback helper.
+
+
+## Live barcode scanning (v2.6.0)
+
+The main scanner uses Expo Camera's live barcode detection and does not take repeated pictures for OCR. Detected UPC/EAN codes appear as selectable yellow overlays and in a selection list when multiple barcodes are visible. The default stability delay is 900 ms and can be changed in Settings to 500, 900, 1500, or 2000 ms. A code must continue to be seen before it becomes selectable; the app does not automatically navigate away on detection. OCR remains available only as an explicit photo/library fallback for printed model numbers when a barcode cannot be scanned.

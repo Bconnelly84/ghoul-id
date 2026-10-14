@@ -1,6 +1,6 @@
 {
   "name": "ghoul-id",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "private": true,
   "main": "expo/AppEntry",
   "scripts": {
@@ -8,7 +8,8 @@
     "android": "expo run:android",
     "prebuild": "expo prebuild",
     "test:discovery": "node scripts/tests/test-online-discovery.js",
-    "test:images": "node scripts/tests/test-catalog-images.js"
+    "test:images": "node scripts/tests/test-catalog-images.js",
+    "test:scanner": "node scripts/tests/test-live-scanning.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

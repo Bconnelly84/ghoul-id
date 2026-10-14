@@ -120,7 +120,6 @@ function AppContent() {
   const [failedCatalogImages, setFailedCatalogImages] = useState([]);
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef(null);
-  const liveOcrBusy = useRef(false);
   const barcodeSeenRef = useRef(new Map());
   const barcodeTimersRef = useRef(new Map());
   const [screen, setScreen] = useState('Home');
@@ -146,7 +145,6 @@ function AppContent() {
   const [ocrLines, setOcrLines] = useState([]);
   const [ocrImageUri, setOcrImageUri] = useState(null);
   const [ocrBusy, setOcrBusy] = useState(false);
-  const [liveCandidates, setLiveCandidates] = useState([]);
   const [selectedOcrCodes, setSelectedOcrCodes] = useState([]);
   const [customItems, setCustomItems] = useState([]);
   const [remoteCatalog, setRemoteCatalog] = useState([]);
@@ -162,6 +160,8 @@ function AppContent() {
   const [onlineSearchMessage, setOnlineSearchMessage] = useState('');
   const onlineSearchKeyRef = useRef('');
   const [releaseNotificationsEnabled, setReleaseNotificationsEnabled] = useState(false);
+  const [scanDelayMs, setScanDelayMs] = useState(900);
+  const SCAN_DELAY_OPTIONS = [500, 900, 1500, 2000];
   const [loaded, setLoaded] = useState(false);
   const [storageSafeToWrite, setStorageSafeToWrite] = useState(false);
   const [storageWarning, setStorageWarning] = useState(false);
@@ -189,6 +189,7 @@ function AppContent() {
           setPhotos(saved.photos && typeof saved.photos === 'object' && !Array.isArray(saved.photos) ? saved.photos : {});
           setCustomItems(Array.isArray(saved.customItems) ? saved.customItems : []);
           setReleaseNotificationsEnabled(saved.releaseNotificationsEnabled === true);
+          setScanDelayMs([500, 900, 1500, 2000].includes(Number(saved.scanDelayMs)) ? Number(saved.scanDelayMs) : 900);
         }
         if (active) setStorageSafeToWrite(true);
       } catch (_) {
@@ -203,9 +204,9 @@ function AppContent() {
 
   useEffect(() => {
     if (!loaded || !storageSafeToWrite) return;
-    AsyncStorage.setItem(STORE_KEY, JSON.stringify({ schemaVersion: STORAGE_SCHEMA_VERSION, owned, wanted, favorites, notes, history, photos, customItems, releaseNotificationsEnabled }))
+    AsyncStorage.setItem(STORE_KEY, JSON.stringify({ schemaVersion: STORAGE_SCHEMA_VERSION, owned, wanted, favorites, notes, history, photos, customItems, releaseNotificationsEnabled, scanDelayMs }))
       .catch(() => { setStorageWarning(true); });
-  }, [loaded, storageSafeToWrite, owned, wanted, favorites, notes, history, photos, customItems, releaseNotificationsEnabled]);
+  }, [loaded, storageSafeToWrite, owned, wanted, favorites, notes, history, photos, customItems, releaseNotificationsEnabled, scanDelayMs]);
 
   useEffect(() => {
     if (storageWarning) Alert.alert('Collection storage warning', 'Ghoul ID could not safely read or save the saved collection. To protect your data, it has paused automatic writes. Do not clear app data; we should investigate before attempting recovery.');
@@ -362,26 +363,6 @@ function AppContent() {
     Alert.alert('Added to wishlist', 'This Wiki discovery is still unverified. It has been saved as a provisional wishlist item.');
   };
 
-  const runLiveOcr = async () => {
-    if (!cameraRef.current || liveOcrBusy.current) return;
-    liveOcrBusy.current = true;
-    try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.35, skipProcessing: true });
-      if (!photo?.uri) return;
-      const result = await TextRecognition.recognize(photo.uri);
-      const lines = [...new Set([...(result?.blocks || []).flatMap(b => (b.lines || []).map(l => l.text || '')), String(result?.text || '').split(/\r?\n/)].flat().map(x => String(x).trim()).filter(Boolean))];
-      const candidates = buildOcrSuggestions(lines);
-      if (candidates.length) setLiveCandidates(prev => { const map = new Map(prev.map(x => [x.normalized, x])); candidates.forEach(x => map.set(x.normalized, x)); return [...map.values()].sort((a,b) => b.priority-a.priority).slice(0,12); });
-    } catch (_) { /* Camera may still be warming up; the manual photo OCR remains available. */ }
-    finally { liveOcrBusy.current = false; }
-  };
-
-  useEffect(() => {
-    if (!(screen === 'Scan' && scanning)) return;
-    const timer = setInterval(() => { runLiveOcr(); }, 2200);
-    return () => clearInterval(timer);
-  }, [screen, scanning]);
-
   // Keep the camera running while candidates stabilize. Expo may emit the same
   // barcode repeatedly; a candidate becomes selectable only after a short delay.
   const handleBarcodeDetected = event => {
@@ -401,12 +382,26 @@ function AppContent() {
     if (!barcodeTimersRef.current.has(key)) {
       const timer = setTimeout(() => {
         const seen = barcodeSeenRef.current.get(key);
-        // Wait before making this code selectable; never auto-navigate away.
-        if (!seen) return;
+        // Only enable a code if the camera has continued seeing it through the delay.
+        if (!seen || Date.now() - seen.lastSeen > 450 || Date.now() - seen.firstSeen < scanDelayMs) {
+          barcodeTimersRef.current.delete(key);
+          if (seen && Date.now() - seen.lastSeen <= 450) {
+            const retry = setTimeout(() => {
+              const currentSeen = barcodeSeenRef.current.get(key);
+              if (currentSeen && Date.now() - currentSeen.lastSeen <= 450 && Date.now() - currentSeen.firstSeen >= scanDelayMs) {
+                setBarcodeCandidates(old => old.map(x => x.normalized === key ? { ...x, stable: true } : x));
+                setSelectedBarcode(current => current || key);
+              }
+              barcodeTimersRef.current.delete(key);
+            }, scanDelayMs);
+            barcodeTimersRef.current.set(key, retry);
+          }
+          return;
+        }
         setBarcodeCandidates(old => old.map(x => x.normalized === key ? { ...x, stable: true } : x));
         setSelectedBarcode(current => current || key);
         barcodeTimersRef.current.delete(key);
-      }, 900);
+      }, scanDelayMs);
       barcodeTimersRef.current.set(key, timer);
     }
   };
@@ -424,7 +419,7 @@ function AppContent() {
       if (!result.granted) { Alert.alert('Camera permission needed', 'Allow camera access in Android settings to scan box barcodes.'); return; }
     }
     barcodeTimersRef.current.forEach(timer => clearTimeout(timer)); barcodeTimersRef.current.clear(); barcodeSeenRef.current.clear();
-    setCode(''); setManualCode(''); setLastScanned(''); setBarcodeCandidates([]); setSelectedBarcode(''); setLiveCandidates([]); setSelectedOcrCodes([]); setTorch(false); setScanning(true); setScreen('Scan');
+    setCode(''); setManualCode(''); setLastScanned(''); setBarcodeCandidates([]); setSelectedBarcode(''); setSelectedOcrCodes([]); setTorch(false); setScanning(true); setScreen('Scan');
   };
 
   const scanNext = () => startScan();
@@ -606,11 +601,10 @@ function AppContent() {
               })}
               <View pointerEvents="none" style={styles.scanCorners}><View style={[styles.corner,styles.c1]}/><View style={[styles.corner,styles.c2]}/><View style={[styles.corner,styles.c3]}/><View style={[styles.corner,styles.c4]}/></View>
             </View>
-            <Text style={styles.centerMuted}>Keep boxes in view. Yellow UPC boxes become selectable after a short stability delay; the camera stays open.</Text>
+            <Text style={styles.centerMuted}>Live barcode scanning — no photos are taken automatically. Keep barcodes in view for {scanDelayMs} ms; select a yellow box, then tap LOOK UP. The camera stays open until you choose a code.</Text>
             {barcodeCandidates.length > 0 && <View style={{maxHeight:145,marginTop:6}}><Text style={styles.sectionTitle}>SELECT UPC TO LOOK UP</Text><ScrollView nestedScrollEnabled>{barcodeCandidates.map(item => <Pressable key={item.normalized} style={[styles.ocrCandidate, selectedBarcode===item.normalized && {borderColor:'#facc15',backgroundColor:'#332b12'}, !item.stable && {opacity:0.65}]} onPress={() => item.stable && setSelectedBarcode(item.normalized)}><Text style={[styles.ocrCandidateLabel,{color:'#facc15'}]}>{item.stable ? (selectedBarcode===item.normalized?'✓ SELECTED':'TAP TO SELECT') : 'STABILIZING…'}</Text><Text style={styles.productTitle}>{item.value}</Text>{findCatalogMatch(item.value) ? <Text style={styles.muted}>{findCatalogMatch(item.value).name}</Text> : <Text style={styles.muted}>Ready for catalog / online lookup</Text>}</Pressable>)}</ScrollView><Btn label="LOOK UP SELECTED UPC" onPress={lookupSelectedBarcode} /></View>}
-            {liveCandidates.length > 0 && <View style={{maxHeight:155,marginTop:8}}><Text style={styles.sectionTitle}>CODES DETECTED — TAP ONE TO LOOK UP</Text><ScrollView nestedScrollEnabled>{liveCandidates.map(item => <Pressable key={item.normalized} style={styles.ocrCandidate} onPress={() => acceptCode(item.value)}><Text style={styles.ocrCandidateLabel}>{item.kind}</Text><Text style={styles.productTitle}>{item.value}</Text>{item.match ? <Text style={styles.muted}>{item.match.name}</Text> : null}</Pressable>)}</ScrollView></View>}
             <View style={styles.scanControls}><Btn label={torch ? 'FLASH ON' : 'FLASH OFF'} kind="purple" onPress={() => setTorch(!torch)} small /><Btn label="CLOSE SCANNER" kind="outline" onPress={goHome} small /></View>
-            <View style={styles.manualBox}><SectionTitle>CAN'T SCAN IT?</SectionTitle><TextInput value={manualCode} onChangeText={setManualCode} placeholder="Enter UPC or printed product code" placeholderTextColor="#988ba3" autoCapitalize="characters" style={styles.input} returnKeyType="search" onSubmitEditing={() => acceptCode(manualCode)} /><Btn label="LOOK UP CODE" onPress={() => acceptCode(manualCode)} /><Btn label="CAPTURE / CHOOSE PHOTO FOR TEXT" kind="purple" onPress={askForOCRPhoto} /></View>
+            <View style={styles.manualBox}><SectionTitle>CAN'T SCAN IT?</SectionTitle><TextInput value={manualCode} onChangeText={setManualCode} placeholder="Enter UPC or printed product code" placeholderTextColor="#988ba3" autoCapitalize="characters" style={styles.input} returnKeyType="search" onSubmitEditing={() => acceptCode(manualCode)} /><Btn label="LOOK UP CODE" onPress={() => acceptCode(manualCode)} /><Btn label="PHOTO FALLBACK: READ PRINTED TEXT" kind="purple" onPress={askForOCRPhoto} /></View>
           </View>
         ) : (
           <>
@@ -634,7 +628,7 @@ function AppContent() {
               {screen === 'Discoveries' && <><TopBar title="NEW WIKI DISCOVERIES" onBack={goHome} /><View style={styles.unverifiedBanner}><Text style={styles.unverifiedFlag}>⚠ NEEDS VERIFICATION</Text><Text style={styles.unverifiedText}>These are automatically discovered Wiki index candidates, not verified catalog entries. The source may contain incomplete or ambiguous rows. Confirm product identity before treating an item as correct.</Text></View><Btn label="REFRESH DISCOVERY LIST" kind="teal" onPress={() => refreshRemoteCatalog(true)} />{discoveryItems.length ? discoveryItems.slice(0,250).map((item,i)=><View key={item.candidateId||item.mattelCodeCandidate+i} style={styles.infoCard}><Text style={styles.productTitle}>{item.name || 'Unnamed Wiki candidate'}</Text><Text style={styles.muted}>Possible Mattel code: {item.mattelCodeCandidate || 'Not identified'}</Text><Text style={styles.muted}>Status: not verified; not yet in main catalog</Text><Btn label="OPEN WIKI SOURCE ↗" kind="outline" onPress={() => openUrl(item.wikiUrl || 'https://monsterhigh.fandom.com/wiki/Product_number')} /><Btn label="ADD PROVISIONALLY TO WISHLIST" kind="purple" onPress={() => saveCandidateToWishlist(item)} /></View>) : <View style={styles.infoCard}><Text style={styles.productTitle}>No discovery queue downloaded</Text><Text style={styles.body}>The daily GitHub workflow must run successfully and publish catalog-discovery.json. Until then, the built-in catalog remains available.</Text><Btn label="OPEN MONSTER HIGH WIKI INDEX ↗" onPress={() => openUrl('https://monsterhigh.fandom.com/wiki/Product_number')} /></View>}</>}
               {screen === 'Releases' && <><TopBar title="UPCOMING RELEASES" onBack={goHome} /><Text style={styles.body}>Release dates are only shown when they have been added to the remotely published release calendar. Dates can change; check the official Mattel listing before purchase.</Text><Btn label="REFRESH CATALOG NOW" kind="teal" onPress={() => refreshRemoteCatalog(true)} />{releaseItems.filter(x => x && x.name && x.releaseDate && new Date(x.releaseDate+'T23:59:59') >= new Date()).length ? releaseItems.filter(x => x && x.name && x.releaseDate && new Date(x.releaseDate+'T23:59:59') >= new Date()).sort((a,b)=>String(a.releaseDate).localeCompare(String(b.releaseDate))).map((item,i)=><View key={item.id||item.name+i} style={styles.infoCard}><Text style={styles.productTitle}>{item.name}</Text><Text style={styles.muted}>Release date: {formatReleaseDate(item.releaseDate)}</Text>{item.status ? <Text style={styles.muted}>Status: {item.status}</Text> : null}<Text style={styles.unverifiedText}>{item.verified ? 'Date source verified' : '⚠ Date not independently verified'}</Text>{item.officialUrl ? <Btn label="OFFICIAL PRODUCT PAGE ↗" onPress={() => openUrl(item.officialUrl)} /> : <Btn label="CHECK MATTEL LAUNCH CALENDAR ↗" onPress={() => openUrl('https://creations.mattel.com/pages/launch-calendar')} />}{item.wikiUrl ? <Btn label="WIKI DETAILS ↗" kind="outline" onPress={() => openUrl(item.wikiUrl)} /> : null}{item.sourceUrl ? <Btn label="VIEW RELEASE SOURCE ↗" kind="outline" onPress={() => openUrl(item.sourceUrl)} /> : null}</View>) : <View style={styles.infoCard}><Text style={styles.productTitle}>No upcoming release dates published</Text><Text style={styles.body}>The screen is ready, but the remote release-calendar.json must be populated with real, sourced dates before it can show upcoming products or schedule notifications.</Text><Btn label="OPEN OFFICIAL MATTEL LAUNCH CALENDAR ↗" onPress={() => openUrl('https://creations.mattel.com/pages/launch-calendar')} /></View>}<Btn label="SCHEDULE RELEASE NOTIFICATIONS" kind="purple" onPress={scheduleReleaseReminders} /></>}
               {screen === 'History' && <><TopBar title="SCAN HISTORY" onBack={goHome} />{history.length ? history.map((h,i) => <Pressable key={h.at+i} style={styles.productRow} onPress={() => {setCode(h.code);setManualCode(h.code);setScreen('Result');}}><View style={{flex:1}}><Text style={styles.productTitle}>{h.code}</Text><Text style={styles.muted}>{new Date(h.at).toLocaleString()}</Text></View><Text style={styles.chevron}>›</Text></Pressable>) : <Text style={styles.body}>Your recent scans will appear here.</Text>}<Btn label="CLEAR SCAN HISTORY" kind="outline" onPress={() => Alert.alert('Clear history?', 'This cannot be undone.', [{text:'Cancel',style:'cancel'},{text:'Clear',style:'destructive',onPress:()=>setHistory([])}])} /></>}
-              {screen === 'Settings' && <><TopBar title="SETTINGS" onBack={goHome} /><View style={styles.infoCard}><Text style={styles.productTitle}>Your data stays on this device</Text><Text style={styles.body}>Your owned list, wishlist, favorites, notes, and scan history are saved locally. No account or paid server is required. Clearing app data may erase this information.</Text></View><View style={styles.infoCard}><Text style={styles.productTitle}>Catalog synchronization</Text><Text style={styles.body}>The app checks the public GitHub catalog and release-calendar JSON when launched. The last good download is cached for offline use. To update all users without an app release, the repository owner must publish updated catalog.json and release-calendar.json files.</Text><Text style={styles.muted}>{catalogSyncAt ? 'Last successful sync: ' + new Date(catalogSyncAt).toLocaleString() : 'No successful online sync yet.'}</Text></View><Btn label={catalogSyncing ? 'REFRESHING…' : 'REFRESH CATALOG NOW'} kind="teal" onPress={() => refreshRemoteCatalog(true)} /><Btn label="UPCOMING RELEASES & ALERTS" kind="purple" onPress={() => setScreen('Releases')} /><Btn label="SCHEDULE RELEASE NOTIFICATIONS" kind="outline" onPress={scheduleReleaseReminders} /><Btn label="OFFICIAL MONSTER HIGH ↗" onPress={() => openUrl('https://creations.mattel.com/collections/monster-high')} /><Btn label="MATTEL PRODUCT SUPPORT ↗" kind="outline" onPress={() => openUrl('https://service.mattel.com/')} /><Btn label="RESET LOCAL APP DATA" kind="outline" onPress={() => Alert.alert('Reset Ghoul ID?', 'This erases your local collection, notes, favorites, and scan history.', [{text:'Cancel',style:'cancel'},{text:'Reset',style:'destructive',onPress:async()=>{setOwned([]);setWanted([]);setFavorites([]);setNotes({});setHistory([]);setPhotos({});setCustomItems([]);setReleaseNotificationsEnabled(false);await Notifications.cancelAllScheduledNotificationsAsync().catch(()=>{});await AsyncStorage.removeItem(STORE_KEY).catch(()=>{});}}])} /></>}
+              {screen === 'Settings' && <><TopBar title="SETTINGS" onBack={goHome} /><View style={styles.infoCard}><Text style={styles.productTitle}>Your data stays on this device</Text><Text style={styles.body}>Your owned list, wishlist, favorites, notes, and scan history are saved locally. No account or paid server is required. Clearing app data may erase this information.</Text></View><View style={styles.infoCard}><Text style={styles.productTitle}>Catalog synchronization</Text><Text style={styles.body}>The app checks the public GitHub catalog and release-calendar JSON when launched. The last good download is cached for offline use. To update all users without an app release, the repository owner must publish updated catalog.json and release-calendar.json files.</Text><Text style={styles.muted}>{catalogSyncAt ? 'Last successful sync: ' + new Date(catalogSyncAt).toLocaleString() : 'No successful online sync yet.'}</Text></View><Btn label={catalogSyncing ? 'REFRESHING…' : 'REFRESH CATALOG NOW'} kind="teal" onPress={() => refreshRemoteCatalog(true)} /><View style={styles.infoCard}><Text style={styles.productTitle}>Barcode stability delay</Text><Text style={styles.body}>How long a barcode must remain visible before it becomes selectable. Default: 900 ms. This affects live barcode detection only; it does not take photos.</Text><View style={styles.filterRow}>{SCAN_DELAY_OPTIONS.map(ms => <Pressable key={ms} onPress={() => setScanDelayMs(ms)} style={[styles.chip, scanDelayMs===ms && styles.chipActive]}><Text style={styles.chipText}>{ms} ms{scanDelayMs===ms?' ✓':''}</Text></Pressable>)}</View></View><Btn label="UPCOMING RELEASES & ALERTS" kind="purple" onPress={() => setScreen('Releases')} /><Btn label="SCHEDULE RELEASE NOTIFICATIONS" kind="outline" onPress={scheduleReleaseReminders} /><Btn label="OFFICIAL MONSTER HIGH ↗" onPress={() => openUrl('https://creations.mattel.com/collections/monster-high')} /><Btn label="MATTEL PRODUCT SUPPORT ↗" kind="outline" onPress={() => openUrl('https://service.mattel.com/')} /><Btn label="RESET LOCAL APP DATA" kind="outline" onPress={() => Alert.alert('Reset Ghoul ID?', 'This erases your local collection, notes, favorites, and scan history.', [{text:'Cancel',style:'cancel'},{text:'Reset',style:'destructive',onPress:async()=>{setOwned([]);setWanted([]);setFavorites([]);setNotes({});setHistory([]);setPhotos({});setCustomItems([]);setReleaseNotificationsEnabled(false);await Notifications.cancelAllScheduledNotificationsAsync().catch(()=>{});await AsyncStorage.removeItem(STORE_KEY).catch(()=>{});}}])} /></>}
               <View style={styles.footer}><Text style={styles.footerBrand}>GHOUL ID</Text><Text style={styles.footerText}>SCAN • IDENTIFY • COLLECT</Text><Text style={styles.footerText}>Independent collector companion. Monster High and related trademarks belong to their respective owners.</Text></View>
             </ScrollView>
             {['Home','Catalog','Collection','Settings'].includes(screen) && <View style={[styles.bottomNav,{height:62+Math.max(insets.bottom,0),paddingBottom:Math.max(insets.bottom,0)}]}>{[['Home','⌂'],['Collection','♡'],['Catalog','▤'],['Settings','⚙']].map(([name,icon]) => <Pressable key={name} onPress={() => {setScanning(false);setScreen(name);if(name==='Collection')setCollectionFilter('All');}} style={styles.navItem}><Text style={[styles.navIcon,screen===name&&{color:PINK}]}>{icon}</Text><Text style={[styles.navLabel,screen===name&&{color:PINK}]}>{name.toUpperCase()}</Text></Pressable>)}</View>}
