@@ -36,3 +36,8 @@ Product details show a sourced exact `releaseDate` when available, otherwise the
 3. Download the generated `ghoul-id-apk` artifact from that workflow run.
 
 An Android build can run in GitHub Actions without a paid API or dedicated server, subject to GitHub Actions usage limits.
+
+
+## Catalog thumbnails and Android navigation safety (v2.5.0)
+
+The app uses Android/iOS safe-area insets for its bottom tab bar. Catalog records support `officialImageUrl`, `wikiImageUrl`, and `imageUrl`; official Mattel product images are preferred, with Wiki page images as a fallback. The scheduled catalog workflow runs `scripts/enrich_catalog_images.py` to discover and publish image URLs without rehosting the image files. Run `npm run test:images` to test the priority/fallback helper.

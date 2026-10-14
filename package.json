@@ -1,13 +1,14 @@
 {
   "name": "ghoul-id",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "private": true,
   "main": "expo/AppEntry",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "prebuild": "expo prebuild",
-    "test:discovery": "node scripts/tests/test-online-discovery.js"
+    "test:discovery": "node scripts/tests/test-online-discovery.js",
+    "test:images": "node scripts/tests/test-catalog-images.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -20,7 +21,8 @@
     "expo-file-system": "~19.0.21",
     "@react-native-ml-kit/text-recognition": "2.0.0",
     "expo-notifications": "~0.32.12",
-    "react-native-webview": "13.15.0"
+    "react-native-webview": "13.15.0",
+    "react-native-safe-area-context": "~5.6.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2"

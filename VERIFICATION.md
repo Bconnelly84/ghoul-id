@@ -1,14 +1,17 @@
-# Ghoul ID 2.4.0 verification notes
+# Ghoul ID 2.5.0 verification notes
 
-Checks completed in this working copy:
-- `node scripts/tests/test-online-discovery.js` passed. The tests cover candidate title extraction, DuckDuckGo redirect unwrapping, grouping Google/Bing/DuckDuckGo as one evidence family, and independent-source scoring.
-- `online-discovery.js` is a standalone CommonJS module used by `App.js`, so candidate parsing/ranking can be tested without loading native React Native modules.
-- `package.json`, `app.json`, `catalog.json`, `catalog-discovery.json`, and `release-calendar.json` parse as valid JSON.
-- Python updater scripts compile successfully.
-- App.js was checked for parse errors using the globally installed TypeScript parser in JSX mode.
+## Implemented in source
+- Bottom navigation adds the `react-native-safe-area-context` bottom inset to its height and bottom padding; `SafeAreaProvider` wraps the app. Android edge-to-edge is explicitly enabled so Android system navigation areas can be handled by safe-area insets.
+- Catalog images use `officialImageUrl` first, then `imageUrl`, then `wikiImageUrl`. Failed image URLs are skipped so a Wiki fallback can load when the official image is unavailable.
+- `scripts/enrich_catalog_images.py` attempts to read image metadata from direct official Mattel product pages first, then queries the Monster High Wiki page-image API for a fallback. It records source-specific URLs and sets `imageUrl` to the official image whenever available.
+- The scheduled catalog workflow runs image enrichment before committing catalog updates.
 
-Not completed / limitations:
-- Live public search pages could not be reached from this environment (DNS/network lookup failed for Google, Bing, DuckDuckGo, and the Wiki). This is an environment limitation and does not prove the app's network calls will fail on a phone.
-- No successful Expo dependency installation or Android APK build has been performed here.
-- Automated HTML parsing remains best-effort. Search engines and sites can block automated requests or change their markup. Search pages shown in WebView remain a fallback; they are not equivalent to structured API results.
-- Scores are heuristic ranking scores, not probabilities. Google, Bing, and DuckDuckGo are deliberately treated as one evidence family. User confirmation is stored as user-confirmed, not independently verified.
+## Checks to run
+- `npm run test:discovery`
+- `npm run test:images`
+- `python -m py_compile scripts/discover_wiki_products.py scripts/discover_mattel_products.py scripts/enrich_catalog_images.py scripts/refresh_release_calendar.py`
+- Parse `App.js` in JSX mode and validate all JSON and YAML files.
+
+## Limitations
+- Live image discovery depends on Mattel and Fandom/Fandom Wiki allowing requests from GitHub Actions. The script preserves existing image fields if a source fails, but newly discovered images require the workflow to run successfully.
+- A successful Android build and physical-device check are still required to prove the bottom bar is correctly inset on phones with three-button navigation and gesture navigation. Source-level changes alone do not prove device behavior.
