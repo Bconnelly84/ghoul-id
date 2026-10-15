@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaView, View, Text, TextInput, Pressable, ScrollView, Linking, StyleSheet, Alert, KeyboardAvoidingView, Platform, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCatalogImageCandidates } from './catalog-images';
+import { parseBarcodeCandidate, getBarcodeBounds } from './scanner-utils';
 import { WebView } from 'react-native-webview';
 import * as Notifications from 'expo-notifications';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -161,6 +162,8 @@ function AppContent() {
   const onlineSearchKeyRef = useRef('');
   const [releaseNotificationsEnabled, setReleaseNotificationsEnabled] = useState(false);
   const [scanDelayMs, setScanDelayMs] = useState(900);
+  const [scannerStatus, setScannerStatus] = useState('Camera ready — point it at a UPC/EAN barcode.');
+  const [scannerEventCount, setScannerEventCount] = useState(0);
   const SCAN_DELAY_OPTIONS = [500, 900, 1500, 2000];
   const [loaded, setLoaded] = useState(false);
   const [storageSafeToWrite, setStorageSafeToWrite] = useState(false);
@@ -363,43 +366,43 @@ function AppContent() {
     Alert.alert('Added to wishlist', 'This Wiki discovery is still unverified. It has been saved as a provisional wishlist item.');
   };
 
-  // Keep the camera running while candidates stabilize. Expo may emit the same
-  // barcode repeatedly; a candidate becomes selectable only after a short delay.
+  // Live scanning only: accept barcode values reported by Expo Camera without
+  // requiring a perfect checksum (damaged/poorly printed UPCs must still be selectable).
+  // The delay prevents instant selection; it never takes a photo.
   const handleBarcodeDetected = event => {
-    const raw = String(event?.data || '').trim();
-    const digits = raw.replace(/\D/g, '');
-    if (!raw || !isValidGtin(digits)) return;
+    const raw = String(event?.data ?? '').trim();
+    setScannerEventCount(count => count + 1);
+    if (!raw) { setScannerStatus('Camera is active; waiting for a readable barcode.'); return; }
+    const parsed = parseBarcodeCandidate(raw);
+    const digits = parsed?.digits || '';
+    if (!parsed) {
+      setScannerStatus(`Camera detected ${String(event?.type || 'a code')}, but it was not an 8, 12, 13, or 14 digit UPC/EAN (${raw.slice(0, 24)}). Try the manual code field for printed model numbers.`);
+      return;
+    }
     const key = normalize(digits);
     const now = Date.now();
-    const bounds = event?.bounds || null;
+    const bounds = getBarcodeBounds(event);
     const previous = barcodeSeenRef.current.get(key);
-    barcodeSeenRef.current.set(key, { value: digits, bounds: bounds || previous?.bounds || null, lastSeen: now, firstSeen: previous?.firstSeen || now });
+    const firstSeen = previous && now - previous.lastSeen <= 2000 ? previous.firstSeen : now;
+    barcodeSeenRef.current.set(key, { value: digits, bounds: bounds || previous?.bounds || null, lastSeen: now, firstSeen });
+    setScannerStatus(`Detected ${digits}${parsed.checksumValid ? '' : ' (checksum warning — still allowing lookup)'}. Hold it steady for ${scanDelayMs} ms.`);
     setBarcodeCandidates(old => {
       const found = old.find(x => x.normalized === key);
-      if (found) return old.map(x => x.normalized === key ? { ...x, value: digits, bounds: bounds || x.bounds, lastSeen: now } : x);
-      return [...old, { value: digits, normalized: key, bounds, firstSeen: now, lastSeen: now, stable: false }].slice(-12);
+      if (found) return old.map(x => x.normalized === key ? { ...x, value: digits, bounds: bounds || x.bounds, lastSeen: now, checksumValid: parsed.checksumValid } : x);
+      return [...old, { value: digits, normalized: key, bounds, firstSeen, lastSeen: now, stable: false, checksumValid: parsed.checksumValid }].slice(-12);
     });
     if (!barcodeTimersRef.current.has(key)) {
       const timer = setTimeout(() => {
         const seen = barcodeSeenRef.current.get(key);
-        // Only enable a code if the camera has continued seeing it through the delay.
-        if (!seen || Date.now() - seen.lastSeen > 450 || Date.now() - seen.firstSeen < scanDelayMs) {
-          barcodeTimersRef.current.delete(key);
-          if (seen && Date.now() - seen.lastSeen <= 450) {
-            const retry = setTimeout(() => {
-              const currentSeen = barcodeSeenRef.current.get(key);
-              if (currentSeen && Date.now() - currentSeen.lastSeen <= 450 && Date.now() - currentSeen.firstSeen >= scanDelayMs) {
-                setBarcodeCandidates(old => old.map(x => x.normalized === key ? { ...x, stable: true } : x));
-                setSelectedBarcode(current => current || key);
-              }
-              barcodeTimersRef.current.delete(key);
-            }, scanDelayMs);
-            barcodeTimersRef.current.set(key, retry);
-          }
-          return;
+        // Expo Camera may emit one event rather than continuous repeats. Allow a
+        // 2-second freshness window instead of the old 450 ms race condition.
+        if (seen && Date.now() - seen.lastSeen <= 2000 && Date.now() - seen.firstSeen >= scanDelayMs) {
+          setBarcodeCandidates(old => old.map(x => x.normalized === key ? { ...x, stable: true } : x));
+          setSelectedBarcode(current => current || key);
+          setScannerStatus(`Barcode ${seen.value} is ready. Select its yellow box or list row, then tap LOOK UP.`);
+        } else {
+          setScannerStatus('Barcode moved out of view before the delay finished. Hold it steady and try again.');
         }
-        setBarcodeCandidates(old => old.map(x => x.normalized === key ? { ...x, stable: true } : x));
-        setSelectedBarcode(current => current || key);
         barcodeTimersRef.current.delete(key);
       }, scanDelayMs);
       barcodeTimersRef.current.set(key, timer);
@@ -419,11 +422,11 @@ function AppContent() {
       if (!result.granted) { Alert.alert('Camera permission needed', 'Allow camera access in Android settings to scan box barcodes.'); return; }
     }
     barcodeTimersRef.current.forEach(timer => clearTimeout(timer)); barcodeTimersRef.current.clear(); barcodeSeenRef.current.clear();
-    setCode(''); setManualCode(''); setLastScanned(''); setBarcodeCandidates([]); setSelectedBarcode(''); setSelectedOcrCodes([]); setTorch(false); setScanning(true); setScreen('Scan');
+    setCode(''); setManualCode(''); setLastScanned(''); setBarcodeCandidates([]); setSelectedBarcode(''); setSelectedOcrCodes([]); setTorch(false); setScannerEventCount(0); setScannerStatus('Camera ready — point it at a UPC/EAN barcode.'); setScanning(true); setScreen('Scan');
   };
 
   const scanNext = () => startScan();
-  const goHome = () => { setScanning(false); setScreen('Home'); };
+  const goHome = () => { barcodeTimersRef.current.forEach(timer => clearTimeout(timer)); barcodeTimersRef.current.clear(); setScanning(false); setScreen('Home'); };
 
   const persistImage = async uri => {
     if (!uri) throw new Error('No image URI was provided.');
@@ -588,10 +591,10 @@ function AppContent() {
           <View style={styles.scanScreen}>
             <View style={styles.scanTop}><Pressable onPress={goHome}><Text style={styles.navText}>‹ BACK</Text></Pressable><Text style={styles.screenTitle}>SCAN AN ITEM</Text><View style={{width:50}} /></View>
             <View style={styles.cameraFrame} onLayout={e => setCameraLayout(e.nativeEvent.layout)}>
-              {permission?.granted ? <CameraView ref={cameraRef} style={styles.camera} facing="back" enableTorch={torch} barcodeScannerSettings={{ barcodeTypes: ['upc_a', 'upc_e', 'ean13', 'ean8'] }} onBarcodeScanned={handleBarcodeDetected} /> : <View style={styles.permissionBox}><Text style={styles.body}>Camera access is needed to scan barcodes.</Text><Btn label="ALLOW CAMERA" onPress={requestPermission} /></View>}
+              {permission?.granted ? <CameraView ref={cameraRef} style={styles.camera} facing="back" enableTorch={torch} barcodeScannerSettings={{ barcodeTypes: ['upc_a', 'upc_e', 'ean13', 'ean8', 'itf14', 'code128', 'code39'] }} onBarcodeScanned={handleBarcodeDetected} onMountError={event => setScannerStatus('Camera preview error: ' + String(event?.message || 'unknown camera error'))} /> : <View style={styles.permissionBox}><Text style={styles.body}>Camera access is needed to scan barcodes.</Text><Btn label="ALLOW CAMERA" onPress={requestPermission} /></View>}
               {barcodeCandidates.map(item => {
-                const origin = item.bounds?.origin || item.bounds?.boundingBox?.origin;
-                const size = item.bounds?.size || item.bounds?.boundingBox?.size;
+                const origin = item.bounds?.origin || item.bounds?.boundingBox?.origin || (Number.isFinite(Number(item.bounds?.x)) ? { x: item.bounds.x, y: item.bounds.y } : null);
+                const size = item.bounds?.size || item.bounds?.boundingBox?.size || (Number.isFinite(Number(item.bounds?.width)) ? { width: item.bounds.width, height: item.bounds.height } : null);
                 if (!origin || !size || !cameraLayout.width || !cameraLayout.height) return null;
                 const left = Math.max(0, Math.min(cameraLayout.width - 36, Number(origin.x) || 0));
                 const top = Math.max(0, Math.min(cameraLayout.height - 36, Number(origin.y) || 0));
@@ -601,8 +604,8 @@ function AppContent() {
               })}
               <View pointerEvents="none" style={styles.scanCorners}><View style={[styles.corner,styles.c1]}/><View style={[styles.corner,styles.c2]}/><View style={[styles.corner,styles.c3]}/><View style={[styles.corner,styles.c4]}/></View>
             </View>
-            <Text style={styles.centerMuted}>Live barcode scanning — no photos are taken automatically. Keep barcodes in view for {scanDelayMs} ms; select a yellow box, then tap LOOK UP. The camera stays open until you choose a code.</Text>
-            {barcodeCandidates.length > 0 && <View style={{maxHeight:145,marginTop:6}}><Text style={styles.sectionTitle}>SELECT UPC TO LOOK UP</Text><ScrollView nestedScrollEnabled>{barcodeCandidates.map(item => <Pressable key={item.normalized} style={[styles.ocrCandidate, selectedBarcode===item.normalized && {borderColor:'#facc15',backgroundColor:'#332b12'}, !item.stable && {opacity:0.65}]} onPress={() => item.stable && setSelectedBarcode(item.normalized)}><Text style={[styles.ocrCandidateLabel,{color:'#facc15'}]}>{item.stable ? (selectedBarcode===item.normalized?'✓ SELECTED':'TAP TO SELECT') : 'STABILIZING…'}</Text><Text style={styles.productTitle}>{item.value}</Text>{findCatalogMatch(item.value) ? <Text style={styles.muted}>{findCatalogMatch(item.value).name}</Text> : <Text style={styles.muted}>Ready for catalog / online lookup</Text>}</Pressable>)}</ScrollView><Btn label="LOOK UP SELECTED UPC" onPress={lookupSelectedBarcode} /></View>}
+            <Text style={styles.centerMuted}>Live barcode scanning — no photos are taken automatically. Keep barcodes in view for {scanDelayMs} ms; select a yellow box, then tap LOOK UP. The camera stays open until you choose a code.</Text><Text style={styles.muted}>Scanner status: {scannerStatus} · Detection events: {scannerEventCount}</Text>
+            {barcodeCandidates.length > 0 && <View style={{maxHeight:145,marginTop:6}}><Text style={styles.sectionTitle}>SELECT UPC TO LOOK UP</Text><ScrollView nestedScrollEnabled>{barcodeCandidates.map(item => <Pressable key={item.normalized} style={[styles.ocrCandidate, selectedBarcode===item.normalized && {borderColor:'#facc15',backgroundColor:'#332b12'}, !item.stable && {opacity:0.65}]} onPress={() => item.stable && setSelectedBarcode(item.normalized)}><Text style={[styles.ocrCandidateLabel,{color:'#facc15'}]}>{item.stable ? (selectedBarcode===item.normalized?'✓ SELECTED':'TAP TO SELECT') : 'STABILIZING…'}</Text><Text style={styles.productTitle}>{item.value}</Text>{item.checksumValid === false ? <Text style={styles.muted}>Checksum warning — lookup is still allowed</Text> : null}{findCatalogMatch(item.value) ? <Text style={styles.muted}>{findCatalogMatch(item.value).name}</Text> : <Text style={styles.muted}>Ready for catalog / online lookup</Text>}</Pressable>)}</ScrollView><Btn label="LOOK UP SELECTED UPC" onPress={lookupSelectedBarcode} /></View>}
             <View style={styles.scanControls}><Btn label={torch ? 'FLASH ON' : 'FLASH OFF'} kind="purple" onPress={() => setTorch(!torch)} small /><Btn label="CLOSE SCANNER" kind="outline" onPress={goHome} small /></View>
             <View style={styles.manualBox}><SectionTitle>CAN'T SCAN IT?</SectionTitle><TextInput value={manualCode} onChangeText={setManualCode} placeholder="Enter UPC or printed product code" placeholderTextColor="#988ba3" autoCapitalize="characters" style={styles.input} returnKeyType="search" onSubmitEditing={() => acceptCode(manualCode)} /><Btn label="LOOK UP CODE" onPress={() => acceptCode(manualCode)} /><Btn label="PHOTO FALLBACK: READ PRINTED TEXT" kind="purple" onPress={askForOCRPhoto} /></View>
           </View>

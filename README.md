@@ -46,3 +46,8 @@ The app uses Android/iOS safe-area insets for its bottom tab bar. Catalog record
 ## Live barcode scanning (v2.6.0)
 
 The main scanner uses Expo Camera's live barcode detection and does not take repeated pictures for OCR. Detected UPC/EAN codes appear as selectable yellow overlays and in a selection list when multiple barcodes are visible. The default stability delay is 900 ms and can be changed in Settings to 500, 900, 1500, or 2000 ms. A code must continue to be seen before it becomes selectable; the app does not automatically navigate away on detection. OCR remains available only as an explicit photo/library fallback for printed model numbers when a barcode cannot be scanned.
+
+
+## Catalog images
+
+Run **Actions → Refresh catalog product images → Run workflow** to enrich the bundled catalog. The workflow tries Mattel-owned product listings first and the Monster High Wiki as a fallback, then reports image coverage in `image-coverage.json`. The workflow must complete successfully before the public catalog will contain newly discovered image URLs.

@@ -16,3 +16,14 @@
 - Catalog thumbnails and product details now retry the Wiki image if the official image fails to load.
 - Add scheduled catalog image enrichment that discovers official product-page images first and queries Wiki page images only as contingency, then publishes URLs in catalog.json.
 - Add automated tests for image priority, deduplication, and fallback behavior.
+
+
+## 2.7.0 — Scanner and catalog-image reliability fixes
+
+- Accept UPC/EAN-shaped numeric barcodes even when the check digit is invalid; show a warning rather than silently discarding a camera detection.
+- Normalize scanner bounds from either `bounds`, `boundingBox`, or `cornerPoints`.
+- Replace the narrow 450 ms repeat-event requirement with a configurable delay and a wider freshness window.
+- Show scanner event count/status and camera mount errors to make failures diagnosable.
+- Add official Mattel Shopify predictive-search image discovery before the Monster High Wiki fallback.
+- Add a separate manually runnable/scheduled image-refresh workflow so image enrichment is not blocked by product-discovery workflow failures.
+- Important: the bundled catalog currently has zero image URLs; those URLs are added only after the image workflow successfully retrieves them.

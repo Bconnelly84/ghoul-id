@@ -7,3 +7,8 @@
 - Printed-text OCR remains a user-triggered photo/library fallback; it is not invoked automatically while scanning.
 - Android versionCode is 17.
 - This verification file documents static and mocked checks only; a physical Android device build/test is still required to confirm camera behavior and overlay coordinate alignment.
+
+
+## v2.7.0 failure follow-up
+
+The previous v2.6.0 test suite did not verify live camera callbacks or actual image coverage. The bundled catalog had zero `imageUrl`, `officialImageUrl`, and `wikiImageUrl` values. v2.7.0 adds scanner parsing/bounds unit tests and a standalone image-refresh workflow. Network access to Mattel/Wiki is unavailable in the local build environment, so live image enrichment and physical-device scanning remain unverified until the GitHub workflow and Android device are tested.
