@@ -10,18 +10,19 @@ import re
 import sys
 import time
 from datetime import datetime, timezone
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode, urlparse, urljoin
 from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
 
 CATALOG = 'catalog.json'
 UA = 'GhoulIDCatalogUpdater/1.0 (+public collector catalog; low-rate requests)'
 OFFICIAL_HOSTS = {'shop.mattel.com', 'creations.mattel.com'}
+OFFICIAL_SEARCH_HOSTS = ('https://shop.mattel.com', 'https://creations.mattel.com')
 
 
 def fetch(url, accept='text/html,application/xhtml+xml,application/json'):
     request = Request(url, headers={'User-Agent': UA, 'Accept': accept})
-    with urlopen(request, timeout=25) as response:
+    with urlopen(request, timeout=12) as response:
         if response.status != 200:
             raise RuntimeError(f'HTTP {response.status}')
         return response.read().decode('utf-8', errors='replace')
@@ -81,6 +82,57 @@ def image_from_official_page(url):
     return None
 
 
+
+def image_from_official_search(product):
+    """Use the public Shopify predictive-search endpoint on Mattel-owned stores.
+
+    Search result images are only accepted when the result title/model code matches
+    the catalog record. This avoids attaching an unrelated doll image to a product.
+    """
+    name = str(product.get('name') or '').strip()
+    code = str(product.get('mattelCode') or '').strip()
+    queries = [code] if code else []
+    if name:
+        queries.append(name)
+    for base in OFFICIAL_SEARCH_HOSTS:
+        for query in queries:
+            params = urlencode({
+                'q': query,
+                'resources[type]': 'product',
+                'resources[limit]': '8',
+                'resources[options][unavailable_products]': 'show',
+            })
+            url = base + '/search/suggest.json?' + params
+            try:
+                data = json.loads(fetch(url, 'application/json'))
+            except Exception as exc:
+                print(f'Official search failed for {query}: {exc}', file=sys.stderr)
+                continue
+            results = ((data.get('resources') or {}).get('results') or {}).get('products') or []
+            ranked = []
+            for result in results:
+                if not isinstance(result, dict):
+                    continue
+                title = str(result.get('title') or '')
+                handle = str(result.get('url') or '')
+                haystack = (title + ' ' + handle).lower()
+                score = 0
+                if code and code.lower() in haystack:
+                    score += 10
+                name_tokens = [t for t in re.findall(r'[a-z0-9]+', name.lower()) if len(t) > 3]
+                score += sum(1 for token in name_tokens if token in haystack)
+                image = result.get('image') or result.get('featured_image') or result.get('featuredImage')
+                if isinstance(image, dict):
+                    image = image.get('url') or image.get('src')
+                if isinstance(image, str):
+                    image = clean_image_url(urljoin(base, image))
+                if image and score >= (10 if code else 1):
+                    ranked.append((score, image))
+            if ranked:
+                ranked.sort(reverse=True)
+                return ranked[0][1]
+    return None
+
 def image_from_wiki(product):
     title = str(product.get('name') or '').strip()
     code = str(product.get('mattelCode') or '').strip()
@@ -129,6 +181,8 @@ def main():
         # Keep known good source URLs; retry only missing values to limit requests.
         if not product.get('officialImageUrl'):
             official = image_from_official_page(product.get('officialUrl'))
+            if not official:
+                official = image_from_official_search(product)
             if official:
                 product['officialImageUrl'] = official
                 official_count += 1
