@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { SafeAreaView, View, Text, TextInput, Pressable, ScrollView, Linking, StyleSheet, Alert, KeyboardAvoidingView, Platform, Image, ActivityIndicator } from 'react-native';
+import { SafeAreaView, View, Text, TextInput, Pressable, ScrollView, Linking, StyleSheet, Alert, KeyboardAvoidingView, Platform, Image, ActivityIndicator, BackHandler } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCatalogImageCandidates } from './catalog-images';
 import { parseBarcodeCandidate, getBarcodeBounds } from './scanner-utils';
@@ -129,11 +129,18 @@ function AppContent() {
   const [manualCode, setManualCode] = useState('');
   const [code, setCode] = useState('');
   const [lastScanned, setLastScanned] = useState('');
-  const [barcodeCandidates, setBarcodeCandidates] = useState([]);
+  const [barcodeCandidates, setBarcodeCandidates] = useState([]); // live detections + session queue
   const [selectedBarcode, setSelectedBarcode] = useState('');
+  const [batchDuplicateCount, setBatchDuplicateCount] = useState(0);
+  const [batchSessionLoaded, setBatchSessionLoaded] = useState(false);
+  const [alternativeLookupExpanded, setAlternativeLookupExpanded] = useState(false);
+  const batchLookupRef = useRef(false);
+  const batchLastDuplicateRef = useRef(new Map());
+  const BATCH_SESSION_KEY = 'ghoul-id-active-scan-session-v1';
   const [cameraLayout, setCameraLayout] = useState({ width: 0, height: 0 });
   const [query, setQuery] = useState('');
   const [seriesFilter, setSeriesFilter] = useState('All');
+  const [catalogSort, setCatalogSort] = useState('name');
   const [collectionFilter, setCollectionFilter] = useState('All');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [previousProductScreen, setPreviousProductScreen] = useState('Catalog');
@@ -326,6 +333,29 @@ function AppContent() {
   const isWanted = p => wanted.includes(productId(p));
   const isFavorite = p => favorites.includes(productId(p));
 
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(BATCH_SESSION_KEY);
+        if (active && raw) {
+          const saved = JSON.parse(raw);
+          if (Array.isArray(saved.items)) {
+            setBarcodeCandidates(saved.items.filter(item => item && item.normalized && item.value));
+            setBatchDuplicateCount(Number.isFinite(saved.duplicates) ? saved.duplicates : 0);
+          }
+        }
+      } catch (_) { /* Ignore a damaged scanner-session cache; collection data remains untouched. */ }
+      finally { if (active) setBatchSessionLoaded(true); }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!loaded || !batchSessionLoaded) return;
+    AsyncStorage.setItem(BATCH_SESSION_KEY, JSON.stringify({ items: barcodeCandidates, duplicates: batchDuplicateCount, updatedAt: new Date().toISOString() })).catch(() => {});
+  }, [barcodeCandidates, batchDuplicateCount, loaded, batchSessionLoaded]);
+
   const saveHistory = value => {
     const entry = { code: value, at: new Date().toISOString(), productId: (findCatalogMatch(value) || {}).id || null };
     setHistory(prev => [entry, ...prev.filter(x => normalize(x.code) !== normalize(value))].slice(0, 50));
@@ -389,7 +419,7 @@ function AppContent() {
     setBarcodeCandidates(old => {
       const found = old.find(x => x.normalized === key);
       if (found) return old.map(x => x.normalized === key ? { ...x, value: digits, bounds: bounds || x.bounds, lastSeen: now, checksumValid: parsed.checksumValid } : x);
-      return [...old, { value: digits, normalized: key, bounds, firstSeen, lastSeen: now, stable: false, checksumValid: parsed.checksumValid }].slice(-12);
+      return [...old, { value: digits, normalized: key, bounds, firstSeen, lastSeen: now, stable: false, checksumValid: parsed.checksumValid, scanCount: 1, status: 'pending', capturedAt: new Date(now).toISOString() }];
     });
     if (!barcodeTimersRef.current.has(key)) {
       const timer = setTimeout(() => {
@@ -397,9 +427,19 @@ function AppContent() {
         // Expo Camera may emit one event rather than continuous repeats. Allow a
         // 2-second freshness window instead of the old 450 ms race condition.
         if (seen && Date.now() - seen.lastSeen <= 2000 && Date.now() - seen.firstSeen >= scanDelayMs) {
-          setBarcodeCandidates(old => old.map(x => x.normalized === key ? { ...x, stable: true } : x));
-          setSelectedBarcode(current => current || key);
-          setScannerStatus(`Barcode ${seen.value} is ready. Select its yellow box or list row, then tap LOOK UP.`);
+          setBarcodeCandidates(old => {
+            const existing = old.find(x => x.normalized === key);
+            if (existing?.stable) {
+              const lastCounted = batchLastDuplicateRef.current.get(key) || 0;
+              if (Date.now() - lastCounted > 2500) {
+                batchLastDuplicateRef.current.set(key, Date.now());
+                setBatchDuplicateCount(count => count + 1);
+              }
+              return old.map(x => x.normalized === key ? { ...x, stable: true, lastSeen: Date.now() } : x);
+            }
+            return old.map(x => x.normalized === key ? { ...x, stable: true, status: findCatalogMatch(x.value) ? 'match-found' : 'needs-lookup' } : x);
+          });
+          setScannerStatus(`Barcode ${seen.value} added to this session. Tap its row to select it, or keep scanning.`);
         } else {
           setScannerStatus('Barcode moved out of view before the delay finished. Hold it steady and try again.');
         }
@@ -409,12 +449,38 @@ function AppContent() {
     }
   };
 
+  const lookupBatchItem = item => {
+    if (!item) return;
+    batchLookupRef.current = true;
+    setLastScanned(item.value);
+    setCode(item.value);
+    setManualCode(item.value);
+    saveHistory(item.value);
+    setScanning(false);
+    setScreen('Result');
+    setBarcodeCandidates(old => old.map(entry => entry.normalized === item.normalized ? { ...entry, status: findCatalogMatch(item.value) ? 'match-found' : 'needs-lookup', reviewedAt: new Date().toISOString() } : entry));
+  };
+
   const lookupSelectedBarcode = () => {
     const chosen = barcodeCandidates.find(x => x.normalized === selectedBarcode && x.stable);
-    if (!chosen) { Alert.alert('Choose a barcode', 'Wait for a yellow barcode box to stabilize, then select it.'); return; }
-    setLastScanned(chosen.value);
-    acceptCode(chosen.value);
+    if (!chosen) { Alert.alert('Choose a barcode', 'Wait for a barcode to stabilize, then select it from the session list.'); return; }
+    lookupBatchItem(chosen);
   };
+
+  const checkAllBatchCodes = () => {
+    setBarcodeCandidates(old => old.map(item => ({ ...item, status: findCatalogMatch(item.value) ? 'match-found' : 'needs-lookup', checkedAt: new Date().toISOString() })));
+    Alert.alert('Batch checked', 'Every scanned code was checked against the local catalog. Tap any row to review its details or investigate codes marked “Needs lookup”.');
+  };
+
+  const removeBatchItem = item => {
+    setBarcodeCandidates(old => old.filter(entry => entry.normalized !== item.normalized));
+    setSelectedBarcode(current => current === item.normalized ? '' : current);
+  };
+
+  const finishBatchSession = () => Alert.alert('Finish this session?', 'Your scanned-code list is saved on this device. You can clear it to start a fresh batch.', [
+    { text: 'Keep Scanning', style: 'cancel' },
+    { text: 'Clear Session', style: 'destructive', onPress: () => { barcodeTimersRef.current.forEach(timer => clearTimeout(timer)); barcodeTimersRef.current.clear(); barcodeSeenRef.current.clear(); batchLastDuplicateRef.current.clear(); setBarcodeCandidates([]); setSelectedBarcode(''); setBatchDuplicateCount(0); AsyncStorage.removeItem(BATCH_SESSION_KEY).catch(() => {}); } }
+  ]);
 
   const startScan = async () => {
     if (!permission?.granted) {
@@ -422,11 +488,23 @@ function AppContent() {
       if (!result.granted) { Alert.alert('Camera permission needed', 'Allow camera access in Android settings to scan box barcodes.'); return; }
     }
     barcodeTimersRef.current.forEach(timer => clearTimeout(timer)); barcodeTimersRef.current.clear(); barcodeSeenRef.current.clear();
-    setCode(''); setManualCode(''); setLastScanned(''); setBarcodeCandidates([]); setSelectedBarcode(''); setSelectedOcrCodes([]); setTorch(false); setScannerEventCount(0); setScannerStatus('Camera ready — point it at a UPC/EAN barcode.'); setScanning(true); setScreen('Scan');
+    setCode(''); setManualCode(''); setLastScanned(''); setSelectedBarcode(''); setSelectedOcrCodes([]); setTorch(false); setScannerEventCount(0); setScannerStatus('Camera ready — point it at a UPC/EAN barcode.'); setScanning(true); setScreen('Scan');
   };
 
   const scanNext = () => startScan();
   const goHome = () => { barcodeTimersRef.current.forEach(timer => clearTimeout(timer)); barcodeTimersRef.current.clear(); setScanning(false); setScreen('Home'); };
+
+  const handleAndroidBack = () => {
+    if (screen === 'Home') { BackHandler.exitApp(); return true; }
+    if (screen === 'Product') { setScreen(previousProductScreen); return true; }
+    if (screen === 'Result') { if (batchLookupRef.current) { batchLookupRef.current = false; setScanning(true); setScreen('Scan'); } else goHome(); return true; }
+    if (screen === 'Scan') { goHome(); return true; }
+    if (screen === 'WebSearch') { setScreen('Result'); return true; }
+    if (screen === 'OCR' || screen === 'Identify' || screen === 'Catalog' || screen === 'Collection' || screen === 'Settings' || screen === 'Releases' || screen === 'Discoveries' || screen === 'History') { goHome(); return true; }
+    goHome(); return true;
+  };
+
+  useEffect(() => { const subscription = BackHandler.addEventListener('hardwareBackPress', handleAndroidBack); return () => subscription.remove(); });
 
   const persistImage = async uri => {
     if (!uri) throw new Error('No image URI was provided.');
@@ -574,7 +652,20 @@ function AppContent() {
     const seriesOk = seriesFilter === 'All' || p.series === seriesFilter;
     const statusOk = collectionFilter === 'All' || (collectionFilter === 'Owned' && owned.includes(productId(p))) || (collectionFilter === 'Wanted' && wanted.includes(productId(p))) || (collectionFilter === 'Favorites' && favorites.includes(productId(p)));
     return queryOk && seriesOk && statusOk;
-  }), [allProducts, query, seriesFilter, collectionFilter, owned, wanted, favorites]);
+  }).sort((a,b) => {
+    const dateA = String(a.releaseDate || releaseInfoForProduct(a)?.releaseDate || a.releaseYear || releaseInfoForProduct(a)?.releaseYear || '').trim();
+    const dateB = String(b.releaseDate || releaseInfoForProduct(b)?.releaseDate || b.releaseYear || releaseInfoForProduct(b)?.releaseYear || '').trim();
+    if (catalogSort === 'name') return String(a.name || '').localeCompare(String(b.name || ''));
+    if (catalogSort === 'newest' || catalogSort === 'oldest') {
+      const yearA = Number((dateA.match(/\d{4}/) || [])[0] || 0); const yearB = Number((dateB.match(/\d{4}/) || [])[0] || 0);
+      if (!yearA && yearB) return 1; if (yearA && !yearB) return -1;
+      if (yearA !== yearB) return catalogSort === 'newest' ? yearB-yearA : yearA-yearB;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    }
+    if (catalogSort === 'series') return String(a.series || 'zzz').localeCompare(String(b.series || 'zzz')) || String(a.name || '').localeCompare(String(b.name || ''));
+    if (catalogSort === 'year') return String((dateA.match(/\d{4}/) || ['9999'])[0]).localeCompare(String((dateB.match(/\d{4}/) || ['9999'])[0])) || String(a.name || '').localeCompare(String(b.name || ''));
+    return String(a.name || '').localeCompare(String(b.name || ''));
+  }), [allProducts, query, seriesFilter, collectionFilter, owned, wanted, favorites, catalogSort, releaseItems]);
 
   const Header = ({ subtitle }) => <View style={styles.header}><View style={styles.logoMark}><Text style={styles.logoSkull}>☠</Text><Text style={styles.logoBow}>♥</Text></View><Text style={styles.brand}>GHOUL<Text style={{color:PINK}}> ID</Text></Text><Text style={styles.tagline}>{subtitle || 'SCAN THE BOX. MEET YOUR GHOUL.'}</Text></View>;
   const Btn = ({ label, onPress, kind = 'pink', small = false }) => <Pressable onPress={onPress} style={[styles.button, kind === 'teal' && styles.buttonTeal, kind === 'purple' && styles.buttonPurple, kind === 'outline' && styles.buttonOutline, small && styles.buttonSmall]}><Text style={[styles.buttonText, kind === 'teal' && {color:'#07151a'}, kind === 'outline' && {color:'#f7d9f3'}]}>{label}</Text></Pressable>;
@@ -588,38 +679,51 @@ function AppContent() {
       <StatusBar style="light" />
       <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {screen === 'Scan' && scanning ? (
-          <View style={styles.scanScreen}>
-            <View style={styles.scanTop}><Pressable onPress={goHome}><Text style={styles.navText}>‹ BACK</Text></Pressable><Text style={styles.screenTitle}>SCAN AN ITEM</Text><View style={{width:50}} /></View>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.scanScreen, { paddingBottom: Math.max(insets.bottom, 24) + 18 }]} keyboardShouldPersistTaps="handled">
+            <View style={styles.scanTop}><Pressable onPress={goHome}><Text style={styles.navText}>‹ BACK</Text></Pressable><Text style={styles.screenTitle}>BATCH SCANNER</Text><View style={{width:50}} /></View>
             <View style={styles.cameraFrame} onLayout={e => setCameraLayout(e.nativeEvent.layout)}>
               {permission?.granted ? <CameraView ref={cameraRef} style={styles.camera} facing="back" enableTorch={torch} barcodeScannerSettings={{ barcodeTypes: ['upc_a', 'upc_e', 'ean13', 'ean8', 'itf14', 'code128', 'code39'] }} onBarcodeScanned={handleBarcodeDetected} onMountError={event => setScannerStatus('Camera preview error: ' + String(event?.message || 'unknown camera error'))} /> : <View style={styles.permissionBox}><Text style={styles.body}>Camera access is needed to scan barcodes.</Text><Btn label="ALLOW CAMERA" onPress={requestPermission} /></View>}
-              {barcodeCandidates.map((item, index) => {
+              {barcodeCandidates.filter(item => item.lastSeen && Date.now() - item.lastSeen < 1800).map((item, index) => {
                 const origin = item.bounds?.origin || item.bounds?.boundingBox?.origin || (Number.isFinite(Number(item.bounds?.x)) ? { x: item.bounds.x, y: item.bounds.y } : null);
                 const size = item.bounds?.size || item.bounds?.boundingBox?.size || (Number.isFinite(Number(item.bounds?.width)) ? { width: item.bounds.width, height: item.bounds.height } : null);
                 if (!cameraLayout.width || !cameraLayout.height) return null;
-                // Some Android camera backends report data/type but omit bounds.
-                // Keep every detected code selectable with a visible yellow fallback
-                // card instead of silently rendering no overlay. Real bounds are used
-                // when they fit the preview coordinate space.
-                const hasBounds = !!(origin && size);
-                const rawX = hasBounds ? Number(origin.x) : NaN;
-                const rawY = hasBounds ? Number(origin.y) : NaN;
-                const rawW = hasBounds ? Number(size.width) : NaN;
-                const rawH = hasBounds ? Number(size.height) : NaN;
-                const boundsFitPreview = hasBounds && rawX >= 0 && rawY >= 0 && rawX < cameraLayout.width && rawY < cameraLayout.height && rawW > 0 && rawH > 0 && rawW <= cameraLayout.width && rawH <= cameraLayout.height;
-                const fallbackWidth = Math.min(168, Math.max(112, cameraLayout.width * 0.42));
-                const width = boundsFitPreview ? Math.max(42, Math.min(cameraLayout.width, rawW)) : fallbackWidth;
-                const height = boundsFitPreview ? Math.max(28, Math.min(cameraLayout.height, rawH)) : 42;
-                const left = boundsFitPreview ? Math.max(0, Math.min(cameraLayout.width - width, rawX)) : Math.max(0, Math.min(cameraLayout.width - width, (cameraLayout.width - width) / 2));
-                const top = boundsFitPreview ? Math.max(0, Math.min(cameraLayout.height - height, rawY)) : Math.max(8, Math.min(cameraLayout.height - height, cameraLayout.height * 0.28 + (index % 4) * (height + 8)));
-                return <Pressable key={item.normalized} onPress={() => item.stable && setSelectedBarcode(item.normalized)} style={[styles.barcodeOverlay,{left,top,width,height,borderColor:selectedBarcode===item.normalized?'#ffe66d':'#facc15',backgroundColor:selectedBarcode===item.normalized?'rgba(250,204,21,0.22)':'rgba(250,204,21,0.08)'}]}><Text numberOfLines={1} style={styles.barcodeOverlayText}>{item.stable ? (selectedBarcode===item.normalized?'✓ ':'') + item.value : 'WAIT…'}</Text>{!boundsFitPreview ? <Text numberOfLines={1} style={styles.muted}>Detected code</Text> : null}</Pressable>;
+                const hasBounds = !!(origin && size); const rawX = hasBounds ? Number(origin.x) : NaN; const rawY = hasBounds ? Number(origin.y) : NaN; const rawW = hasBounds ? Number(size.width) : NaN; const rawH = hasBounds ? Number(size.height) : NaN;
+                const fits = hasBounds && rawX >= 0 && rawY >= 0 && rawX < cameraLayout.width && rawY < cameraLayout.height && rawW > 0 && rawH > 0 && rawW <= cameraLayout.width && rawH <= cameraLayout.height;
+                const width = fits ? Math.max(42, Math.min(cameraLayout.width, rawW)) : Math.min(150, Math.max(105, cameraLayout.width * 0.4)); const height = fits ? Math.max(28, Math.min(cameraLayout.height, rawH)) : 38;
+                const left = fits ? Math.max(0, Math.min(cameraLayout.width-width, rawX)) : Math.max(0, (cameraLayout.width-width)/2); const top = fits ? Math.max(0, Math.min(cameraLayout.height-height, rawY)) : Math.max(8, Math.min(cameraLayout.height-height, 24 + (index%4)*(height+7)));
+                return <Pressable key={item.normalized} onPress={() => item.stable && setSelectedBarcode(item.normalized)} style={[styles.barcodeOverlay,{left,top,width,height,borderColor:selectedBarcode===item.normalized?TEAL:'#facc15',backgroundColor:selectedBarcode===item.normalized?'rgba(32,217,232,0.25)':'rgba(250,204,21,0.10)'}]}><Text numberOfLines={1} style={styles.barcodeOverlayText}>{barcodeCandidates.findIndex(x=>x.normalized===item.normalized)+1}</Text></Pressable>;
               })}
               <View pointerEvents="none" style={styles.scanCorners}><View style={[styles.corner,styles.c1]}/><View style={[styles.corner,styles.c2]}/><View style={[styles.corner,styles.c3]}/><View style={[styles.corner,styles.c4]}/></View>
             </View>
-            <Text style={styles.centerMuted}>Live barcode scanning — no photos are taken automatically. Keep barcodes in view for {scanDelayMs} ms; select a yellow box, then tap LOOK UP. The camera stays open until you choose a code.</Text><Text style={styles.muted}>Scanner status: {scannerStatus} · Detection events: {scannerEventCount}</Text>
-            {barcodeCandidates.length > 0 && <View style={{maxHeight:145,marginTop:6}}><Text style={styles.sectionTitle}>SELECT UPC TO LOOK UP</Text><ScrollView nestedScrollEnabled>{barcodeCandidates.map(item => <Pressable key={item.normalized} style={[styles.ocrCandidate, selectedBarcode===item.normalized && {borderColor:'#facc15',backgroundColor:'#332b12'}, !item.stable && {opacity:0.65}]} onPress={() => item.stable && setSelectedBarcode(item.normalized)}><Text style={[styles.ocrCandidateLabel,{color:'#facc15'}]}>{item.stable ? (selectedBarcode===item.normalized?'✓ SELECTED':'TAP TO SELECT') : 'STABILIZING…'}</Text><Text style={styles.productTitle}>{item.value}</Text>{item.checksumValid === false ? <Text style={styles.muted}>Checksum warning — lookup is still allowed</Text> : null}{findCatalogMatch(item.value) ? <Text style={styles.muted}>{findCatalogMatch(item.value).name}</Text> : <Text style={styles.muted}>Ready for catalog / online lookup</Text>}</Pressable>)}</ScrollView><Btn label="LOOK UP SELECTED UPC" onPress={lookupSelectedBarcode} /></View>}
-            <View style={styles.scanControls}><Btn label={torch ? 'FLASH ON' : 'FLASH OFF'} kind="purple" onPress={() => setTorch(!torch)} small /><Btn label="CLOSE SCANNER" kind="outline" onPress={goHome} small /></View>
-            <View style={styles.manualBox}><SectionTitle>CAN'T SCAN IT?</SectionTitle><TextInput value={manualCode} onChangeText={setManualCode} placeholder="Enter UPC or printed product code" placeholderTextColor="#988ba3" autoCapitalize="characters" style={styles.input} returnKeyType="search" onSubmitEditing={() => acceptCode(manualCode)} /><Btn label="LOOK UP CODE" onPress={() => acceptCode(manualCode)} /><Btn label="PHOTO FALLBACK: READ PRINTED TEXT" kind="purple" onPress={askForOCRPhoto} /></View>
-          </View>
+            <Text style={styles.centerMuted}>Scan box after box. Codes stay in this session after leaving camera view. No photos are taken automatically.</Text>
+            <Text style={styles.muted}>Status: {scannerStatus} · Camera events: {scannerEventCount}</Text>
+            <View style={styles.scanControls}><Btn label={torch ? 'FLASH ON' : 'FLASH OFF'} kind="purple" onPress={() => setTorch(!torch)} small /><Btn label="CLEAR / FINISH BATCH" kind="outline" onPress={finishBatchSession} small /></View>
+            <View style={styles.infoCard}>
+              <Text style={styles.resultName}>SESSION QUEUE · {barcodeCandidates.length} UNIQUE CODE{barcodeCandidates.length===1?'':'S'}</Text>
+              <Text style={styles.muted}>{batchDuplicateCount} repeat detection{batchDuplicateCount===1?'':'s'} ignored. Repeated sightings do not create extra rows.</Text>
+              {barcodeCandidates.length ? barcodeCandidates.map((item,index) => {
+                const isSelected = selectedBarcode === item.normalized; const match = findCatalogMatch(item.value);
+                const status = match ? 'MATCH FOUND' : item.stable ? 'NEEDS LOOKUP' : 'STABILIZING';
+                return <View key={item.normalized} style={[styles.ocrCandidate, isSelected && {borderColor:TEAL,backgroundColor:'#123038'}]}>
+                  <Pressable onPress={() => item.stable && setSelectedBarcode(item.normalized)}>
+                    <Text style={[styles.ocrCandidateLabel,{color:isSelected?TEAL:PINK}]}>{isSelected?'✓ SELECTED':'CODE '+(index+1)+' · TAP TO SELECT'}  ·  {status}</Text>
+                    <Text style={styles.productTitle}>{item.value}</Text>
+                    <Text style={styles.muted}>{match ? match.name : 'Not matched in local catalog yet'}</Text>
+                    {item.checksumValid === false ? <Text style={styles.muted}>Checksum warning — lookup is still allowed.</Text> : null}
+                  </Pressable>
+                  <View style={styles.scanControls}><Btn label="VIEW DETAILS" onPress={() => item.stable && lookupBatchItem(item)} small /><Btn label="REMOVE" kind="outline" onPress={() => removeBatchItem(item)} small /></View>
+                </View>;
+              }) : <Text style={styles.body}>No codes captured yet. Hold a barcode steady for {scanDelayMs} ms, then move to the next box.</Text>}
+              <Btn label="LOOK UP SELECTED CODE" onPress={lookupSelectedBarcode} />
+              <Btn label="CHECK ALL AGAINST CATALOG" kind="teal" onPress={checkAllBatchCodes} />
+              <Btn label="RESUME / KEEP SCANNING" kind="purple" onPress={() => { setScanning(true); setScreen('Scan'); }} />
+            </View>
+            <Pressable onPress={() => setAlternativeLookupExpanded(v=>!v)} style={[styles.infoCard,{borderColor:'#684c76'}]}>
+              <Text style={styles.productTitle}>{alternativeLookupExpanded?'⌃':'⌄'} OTHER LOOKUP OPTIONS</Text>
+              <Text style={styles.muted}>Manual code entry and photo/OCR fallback</Text>
+            </Pressable>
+            {alternativeLookupExpanded ? <View style={styles.manualBox}><SectionTitle>MANUAL LOOKUP</SectionTitle><TextInput value={manualCode} onChangeText={setManualCode} placeholder="Enter UPC or printed product code" placeholderTextColor="#988ba3" autoCapitalize="characters" style={styles.input} returnKeyType="search" onSubmitEditing={() => acceptCode(manualCode)} /><Btn label="LOOK UP CODE" onPress={() => { batchLookupRef.current=false; acceptCode(manualCode); }} /><Btn label="PHOTO FALLBACK: READ PRINTED TEXT" kind="purple" onPress={askForOCRPhoto} /></View> : null}
+          </ScrollView>
         ) : (
           <>
             <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -631,12 +735,12 @@ function AppContent() {
                 <View style={styles.noteCard}><Text style={styles.noteTitle}>A NOTE FROM THE CRYPT</Text><Text style={styles.body}>Unknown codes stay unknown until we can verify them. Use online search to help identify new finds, then expand the catalog with confirmed information.</Text></View>
               </>}
               {screen === 'Identify' && <><TopBar title="IDENTIFY A CODE" onBack={goHome} /><Text style={styles.body}>Enter the UPC barcode, Mattel product number, or another clearly printed product code. Manufacturing and lot codes may not identify the doll.</Text><TextInput value={manualCode} onChangeText={setManualCode} placeholder="e.g. JMG88 or UPC" placeholderTextColor="#988ba3" autoCapitalize="characters" style={styles.input} onSubmitEditing={() => acceptCode(manualCode)} returnKeyType="search" /><Btn label="IDENTIFY CODE" onPress={() => acceptCode(manualCode)} /><Btn label="OPEN BARCODE SCANNER" kind="teal" onPress={startScan} /></>}
-              {screen === 'Result' && <><TopBar title="SCAN RESULTS" onBack={goHome} /><View style={styles.resultHero}>{(photos[product ? productId(product) : 'code:'+normalize(code)] || (product && catalogImageFor(product))) ? <Image source={{uri: photos[product ? productId(product) : 'code:'+normalize(code)] || catalogImageFor(product)}} style={styles.resultPhoto} resizeMode="contain" onError={() => { if (!photos[product ? productId(product) : 'code:'+normalize(code)]) markCatalogImageFailed(catalogImageFor(product)); }} /> : null}<Text style={styles.resultLabel}>{product ? (product.identifierConfidence === 'user-confirmed-online-candidate' ? '✦ USER-CONFIRMED ONLINE MATCH' : '✦ LOCAL CATALOG MATCH') : '✧ NOT FOUND IN LOCAL CATALOG'}</Text><Text style={styles.scannedCode}>{code}</Text>{product ? <><Text style={styles.resultName}>{product.name}</Text><Text style={styles.body}>{[product.character, product.series, product.mattelCode].filter(Boolean).join(' • ')}</Text>{(releaseInfoForProduct(product)?.releaseDate || product.releaseDate) ? <Text style={styles.muted}>Release date: {formatReleaseDate(releaseInfoForProduct(product)?.releaseDate || product.releaseDate)}{releaseInfoForProduct(product)?.status ? ' · ' + releaseInfoForProduct(product).status : ''}</Text> : null}{!!product.releaseYear && <Text style={styles.muted}>Release year: {product.releaseYear}</Text>}</> : <><View style={styles.unverifiedBanner}><Text style={styles.unverifiedFlag}>⚠ UNVERIFIED — OUTSIDE CATALOG</Text><Text style={styles.unverifiedText}>Any product you identify through external search is a candidate, not a confirmed Ghoul ID match. Check the model number and product photos before treating it as correct.</Text></View><Text style={styles.resultName}>Finding the most likely match…</Text><Text style={styles.body}>Ghoul ID checks accessible public search pages and compares candidate names across sources. Exact UPC/model-code matches and agreement between independent sources rank higher. Websites may block automatic reading, so results are not guaranteed.</Text>{onlineSearchBusy ? <View style={styles.infoCard}><ActivityIndicator size="large" color={TEAL} /><Text style={styles.body}>{onlineSearchMessage || 'Searching public sources…'}</Text></View> : null}{!onlineSearchBusy && onlineCandidates[onlineCandidateIndex] ? <View style={styles.infoCard}><Text style={styles.ocrCandidateLabel}>MOST LIKELY CANDIDATE · {onlineCandidateIndex + 1} OF {onlineCandidates.length}</Text><Text style={styles.resultName}>{onlineCandidates[onlineCandidateIndex].name}</Text><Text style={styles.muted}>Found across: {(onlineCandidates[onlineCandidateIndex].sources || [onlineCandidates[onlineCandidateIndex].sourceName]).join(', ')}</Text><Text style={styles.muted}>Candidate ranking score: {onlineCandidates[onlineCandidateIndex].score} · Not independently verified</Text>{onlineCandidates[onlineCandidateIndex].mattelCode ? <Text style={styles.muted}>Possible Mattel model number: {onlineCandidates[onlineCandidateIndex].mattelCode}</Text> : null}<Btn label="YES — THIS IS THE CORRECT ITEM" kind="teal" onPress={() => confirmOnlineCandidate(onlineCandidates[onlineCandidateIndex])} /><Btn label="NO — SHOW NEXT MOST LIKELY" kind="outline" onPress={rejectOnlineCandidate} /><Btn label="OPEN THIS CANDIDATE SOURCE ↗" kind="outline" onPress={() => openUrl(onlineCandidates[onlineCandidateIndex].sourceUrls?.[0] || onlineCandidates[onlineCandidateIndex].searchPageUrl)} /></View> : null}<Text style={styles.body}>{onlineSearchMessage}</Text><Btn label={onlineSearchBusy ? 'SEARCHING ONLINE…' : 'SEARCH ONLINE AGAIN'} kind="purple" onPress={() => runOnlineDiscovery(code, true)} /><Btn label="SEARCH GOOGLE RESULTS IN GHOUL ID" onPress={() => openSearchInApp(searchWeb(code), 'GOOGLE SEARCH · UNVERIFIED')} /><Btn label="SEARCH BING RESULTS IN GHOUL ID" kind="outline" onPress={() => openSearchInApp(searchBing(code), 'BING SEARCH · UNVERIFIED')} /><Btn label="SEARCH DUCKDUCKGO RESULTS IN GHOUL ID" kind="outline" onPress={() => openSearchInApp(searchDuckDuckGo(code), 'DUCKDUCKGO SEARCH · UNVERIFIED')} /><Btn label="SEARCH EBAY LISTINGS IN GHOUL ID" kind="teal" onPress={() => openSearchInApp(searchEbay(code), 'EBAY SEARCH · UNVERIFIED')} /><Btn label="SEARCH MONSTER HIGH WIKI IN GHOUL ID" kind="outline" onPress={() => openSearchInApp(searchWiki(code), 'WIKI SEARCH · UNVERIFIED')} /><Btn label="SEARCH OFFICIAL MATTEL SITES IN GHOUL ID" kind="outline" onPress={() => openSearchInApp(searchMattel(code), 'MATTEL WEB SEARCH · UNVERIFIED')} /><Btn label="SEARCH MATTEL PRODUCT SUPPORT IN GHOUL ID" kind="outline" onPress={() => openSearchInApp(searchMattelSupport(code), 'MATTEL SUPPORT · UNVERIFIED')} /></>}</View>
+              {screen === 'Result' && <><TopBar title="SCAN RESULTS" onBack={() => { if (batchLookupRef.current) { batchLookupRef.current = false; setScanning(true); setScreen('Scan'); } else goHome(); }} /><View style={styles.resultHero}>{(photos[product ? productId(product) : 'code:'+normalize(code)] || (product && catalogImageFor(product))) ? <Image source={{uri: photos[product ? productId(product) : 'code:'+normalize(code)] || catalogImageFor(product)}} style={styles.resultPhoto} resizeMode="contain" onError={() => { if (!photos[product ? productId(product) : 'code:'+normalize(code)]) markCatalogImageFailed(catalogImageFor(product)); }} /> : null}<Text style={styles.resultLabel}>{product ? (product.identifierConfidence === 'user-confirmed-online-candidate' ? '✦ USER-CONFIRMED ONLINE MATCH' : '✦ LOCAL CATALOG MATCH') : '✧ NOT FOUND IN LOCAL CATALOG'}</Text><Text style={styles.scannedCode}>{code}</Text>{product ? <><Text style={styles.resultName}>{product.name}</Text><Text style={styles.body}>{[product.character, product.series, product.mattelCode].filter(Boolean).join(' • ')}</Text>{(releaseInfoForProduct(product)?.releaseDate || product.releaseDate) ? <Text style={styles.muted}>Release date: {formatReleaseDate(releaseInfoForProduct(product)?.releaseDate || product.releaseDate)}{releaseInfoForProduct(product)?.status ? ' · ' + releaseInfoForProduct(product).status : ''}</Text> : null}{!!product.releaseYear && <Text style={styles.muted}>Release year: {product.releaseYear}</Text>}</> : <><View style={styles.unverifiedBanner}><Text style={styles.unverifiedFlag}>⚠ UNVERIFIED — OUTSIDE CATALOG</Text><Text style={styles.unverifiedText}>Any product you identify through external search is a candidate, not a confirmed Ghoul ID match. Check the model number and product photos before treating it as correct.</Text></View><Text style={styles.resultName}>Finding the most likely match…</Text><Text style={styles.body}>Ghoul ID checks accessible public search pages and compares candidate names across sources. Exact UPC/model-code matches and agreement between independent sources rank higher. Websites may block automatic reading, so results are not guaranteed.</Text>{onlineSearchBusy ? <View style={styles.infoCard}><ActivityIndicator size="large" color={TEAL} /><Text style={styles.body}>{onlineSearchMessage || 'Searching public sources…'}</Text></View> : null}{!onlineSearchBusy && onlineCandidates[onlineCandidateIndex] ? <View style={styles.infoCard}><Text style={styles.ocrCandidateLabel}>MOST LIKELY CANDIDATE · {onlineCandidateIndex + 1} OF {onlineCandidates.length}</Text><Text style={styles.resultName}>{onlineCandidates[onlineCandidateIndex].name}</Text><Text style={styles.muted}>Found across: {(onlineCandidates[onlineCandidateIndex].sources || [onlineCandidates[onlineCandidateIndex].sourceName]).join(', ')}</Text><Text style={styles.muted}>Candidate ranking score: {onlineCandidates[onlineCandidateIndex].score} · Not independently verified</Text>{onlineCandidates[onlineCandidateIndex].mattelCode ? <Text style={styles.muted}>Possible Mattel model number: {onlineCandidates[onlineCandidateIndex].mattelCode}</Text> : null}<Btn label="YES — THIS IS THE CORRECT ITEM" kind="teal" onPress={() => confirmOnlineCandidate(onlineCandidates[onlineCandidateIndex])} /><Btn label="NO — SHOW NEXT MOST LIKELY" kind="outline" onPress={rejectOnlineCandidate} /><Btn label="OPEN THIS CANDIDATE SOURCE ↗" kind="outline" onPress={() => openUrl(onlineCandidates[onlineCandidateIndex].sourceUrls?.[0] || onlineCandidates[onlineCandidateIndex].searchPageUrl)} /></View> : null}<Text style={styles.body}>{onlineSearchMessage}</Text><Btn label={onlineSearchBusy ? 'SEARCHING ONLINE…' : 'SEARCH ONLINE AGAIN'} kind="purple" onPress={() => runOnlineDiscovery(code, true)} /><Btn label="SEARCH GOOGLE RESULTS IN GHOUL ID" onPress={() => openSearchInApp(searchWeb(code), 'GOOGLE SEARCH · UNVERIFIED')} /><Btn label="SEARCH BING RESULTS IN GHOUL ID" kind="outline" onPress={() => openSearchInApp(searchBing(code), 'BING SEARCH · UNVERIFIED')} /><Btn label="SEARCH DUCKDUCKGO RESULTS IN GHOUL ID" kind="outline" onPress={() => openSearchInApp(searchDuckDuckGo(code), 'DUCKDUCKGO SEARCH · UNVERIFIED')} /><Btn label="SEARCH EBAY LISTINGS IN GHOUL ID" kind="teal" onPress={() => openSearchInApp(searchEbay(code), 'EBAY SEARCH · UNVERIFIED')} /><Btn label="SEARCH MONSTER HIGH WIKI IN GHOUL ID" kind="outline" onPress={() => openSearchInApp(searchWiki(code), 'WIKI SEARCH · UNVERIFIED')} /><Btn label="SEARCH OFFICIAL MATTEL SITES IN GHOUL ID" kind="outline" onPress={() => openSearchInApp(searchMattel(code), 'MATTEL WEB SEARCH · UNVERIFIED')} /><Btn label="SEARCH MATTEL PRODUCT SUPPORT IN GHOUL ID" kind="outline" onPress={() => openSearchInApp(searchMattelSupport(code), 'MATTEL SUPPORT · UNVERIFIED')} /></>}</View>
                 {product && <><View style={styles.actionGrid}><Btn label={isOwned(product) ? '✓ OWNED — TAP TO REMOVE' : '+ MARK AS OWNED'} kind="teal" onPress={() => updateStatus(product,'owned')} /><Btn label={isWanted(product) ? '♡ WISHLIST — TAP TO REMOVE' : '+ ADD TO WISHLIST'} kind="purple" onPress={() => updateStatus(product,'wanted')} /><Btn label={isFavorite(product) ? '♥ FAVORITED' : '♡ FAVORITE'} kind="outline" onPress={() => toggle(setFavorites,favorites,product)} /></View><Btn label="ADD / CHANGE PRODUCT PHOTO" kind="outline" onPress={() => askForProductPhoto(productId(product))} /><Btn label="VIEW EBAY SOLD LISTINGS ↗" kind="teal" onPress={() => openUrl(ebaySoldSearch(product, code))} />{officialUrlForProduct(product) ? <Btn label={officialUrlLabelForProduct(product)} onPress={() => openUrl(officialUrlForProduct(product))} /> : <Btn label="SEARCH OFFICIAL MATTEL PAGES ↗" onPress={() => openUrl(searchMattel(product.mattelCode || code))} />}<Btn label="MONSTER HIGH WIKI ↗" kind="outline" onPress={() => openUrl(product.referenceUrl || searchWiki(product.mattelCode || code || product.name))} /></>}
                 {!product && <><View style={styles.actionGrid}><Btn label="+ ADD UNIDENTIFIED ITEM TO OWNED" kind="teal" onPress={() => saveUnknownToCollection('owned')} /><Btn label="♡ ADD UNIDENTIFIED ITEM TO WISHLIST" kind="purple" onPress={() => saveUnknownToCollection('wanted')} /></View><Btn label="SAVE PHOTO FOR THIS CODE" kind="outline" onPress={() => askForProductPhoto('code:'+normalize(code))} /></>}
                 <Btn label="▤  READ PRINTED TEXT (OCR)" kind="purple" onPress={askForOCRPhoto} /><Btn label="↻  SCAN NEXT ITEM" kind="teal" onPress={scanNext} /><Btn label="BACK TO HOME" kind="outline" onPress={goHome} /></>}
               {screen === 'OCR' && <><TopBar title="PRINTED TEXT OCR" onBack={() => setScreen('Home')} /><Text style={styles.body}>Review the text detected in your photo. Tap a likely product code or UPC to look it up. Text recognition can misread characters, so check the code before relying on a match.</Text>{ocrImageUri ? <Image source={{uri:ocrImageUri}} style={styles.ocrPhoto} resizeMode="contain" /> : null}{ocrBusy ? <View style={styles.loadingBox}><ActivityIndicator size="large" color={PINK} /><Text style={styles.body}>Reading printed text…</Text></View> : <>{ocrLines.length ? <>{ocrSuggestions.length ? <><SectionTitle>BEST IDENTIFIER CANDIDATES</SectionTitle><Text style={styles.muted}>Catalog matches and valid barcode numbers appear first. Secondary carton/lot codes are deliberately deprioritized or ignored because they may identify packaging batches rather than the doll.</Text>{ocrSuggestions.map((item,i) => <Pressable key={'code'+item.normalized} style={[styles.ocrCandidate, selectedOcrCodes.includes(item.value) && {borderColor:TEAL,backgroundColor:'#123038'}]} onPress={() => setSelectedOcrCodes([item.value])}><Text style={styles.ocrCandidateLabel}>{selectedOcrCodes.includes(item.value) ? '✓ SELECTED' : item.kind + ' · TAP TO SELECT'}</Text><Text style={styles.productTitle}>{item.value}</Text>{item.match ? <Text style={styles.muted}>{item.match.name}</Text> : item.kind === 'VALID BARCODE FORMAT' ? <Text style={styles.muted}>Barcode format looks valid; catalog match not confirmed yet.</Text> : null}</Pressable>)}<Btn label={selectedOcrCodes.length ? 'LOOK UP SELECTED CODE' : 'SELECT A CODE ABOVE'} onPress={lookupSelectedOcrCodes} /></> : <View style={styles.infoCard}><Text style={styles.productTitle}>No likely product identifiers found</Text><Text style={styles.body}>We found text, but none looked like a catalog code or valid UPC/EAN/GTIN. You can still review the text below or enter a code manually.</Text></View>}<SectionTitle>ALL RECOGNIZED TEXT</SectionTitle>{ocrLines.map((line,i) => <View key={'line'+i} style={styles.ocrLine}><Text style={styles.body}>{line}</Text></View>)}</> : <View style={styles.infoCard}><Text style={styles.productTitle}>No text ready yet</Text><Text style={styles.body}>Try a clear, well-lit photo with the product number facing the camera.</Text></View>}<Btn label="TRY ANOTHER PHOTO" kind="purple" onPress={askForOCRPhoto} /><Btn label="ENTER CODE MANUALLY" onPress={() => setScreen('Identify')} /></>}</>}
-              {(screen === 'Catalog' || screen === 'Collection') && <><TopBar title={screen === 'Catalog' ? 'DOLL CATALOG' : 'MY COLLECTION'} onBack={goHome} />{screen === 'Catalog' && <><Btn label={catalogSyncing ? 'REFRESHING CATALOG…' : '↻ REFRESH ONLINE CATALOG'} kind="teal" onPress={() => refreshRemoteCatalog(true)} /><Text style={styles.muted}>{catalogSyncAt ? 'Last online sync: ' + new Date(catalogSyncAt).toLocaleString() : 'Showing bundled catalog until an online copy is available.'}</Text></>}<TextInput value={query} onChangeText={setQuery} placeholder="Search names, characters, series, codes…" placeholderTextColor="#988ba3" style={styles.input} autoCapitalize="none" /><ScrollView horizontal showsHorizontalScrollIndicator={false} style={{maxHeight:48,marginBottom:12}} contentContainerStyle={{gap:8,alignItems:'center'}}>{['All', ...Array.from(new Set(allProducts.map(p => p.series).filter(Boolean)))].map(s => <Pressable key={s} onPress={() => setSeriesFilter(s)} style={[styles.chip,seriesFilter===s && styles.chipActive]}><Text style={styles.chipText}>{s}</Text></Pressable>)}</ScrollView>{screen === 'Collection' && <View style={styles.filterRow}>{['All','Owned','Wanted','Favorites'].map(s => <Pressable key={s} onPress={() => setCollectionFilter(s)} style={[styles.chip,collectionFilter===s && styles.chipActive]}><Text style={styles.chipText}>{s}</Text></Pressable>)}</View>}{(screen === 'Collection' ? filteredCatalog.filter(p => collectionFilter === 'All' ? (isOwned(p) || isWanted(p) || isFavorite(p)) : (collectionFilter === 'Owned' && isOwned(p)) || (collectionFilter === 'Wanted' && isWanted(p)) || (collectionFilter === 'Favorites' && isFavorite(p))) : filteredCatalog).length ? (screen === 'Collection' ? filteredCatalog.filter(p => collectionFilter === 'All' ? (isOwned(p) || isWanted(p) || isFavorite(p)) : (collectionFilter === 'Owned' && isOwned(p)) || (collectionFilter === 'Wanted' && isWanted(p)) || (collectionFilter === 'Favorites' && isFavorite(p))) : filteredCatalog).map(p => <ProductRow key={productId(p)} item={p} onPress={() => {setSelectedProduct(p);setPreviousProductScreen(screen);setCode('');setScreen('Product');}} />) : <View style={styles.infoCard}><Text style={styles.productTitle}>{screen === 'Collection' ? 'Your collection is waiting' : 'No dolls found'}</Text><Text style={styles.body}>{screen==='Collection' ? 'Nothing matches this collection filter yet. Mark dolls as owned, wanted, or favorite after identifying them. Your saved dolls will appear here.' : 'Try another search. More verified catalog entries will be added over time.'}</Text></View>}</>}
+              {(screen === 'Catalog' || screen === 'Collection') && <><TopBar title={screen === 'Catalog' ? 'DOLL CATALOG' : 'MY COLLECTION'} onBack={goHome} />{screen === 'Catalog' && <><Btn label={catalogSyncing ? 'REFRESHING CATALOG…' : '↻ REFRESH ONLINE CATALOG'} kind="teal" onPress={() => refreshRemoteCatalog(true)} /><Text style={styles.muted}>{catalogSyncAt ? 'Last online sync: ' + new Date(catalogSyncAt).toLocaleString() : 'Showing bundled catalog until an online copy is available.'}</Text></>}<TextInput value={query} onChangeText={setQuery} placeholder="Search names, characters, series, codes…" placeholderTextColor="#988ba3" style={styles.input} autoCapitalize="none" /><Text style={styles.muted}>SORT CATALOG</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} style={{maxHeight:48,marginBottom:8}} contentContainerStyle={{gap:8,alignItems:"center"}}>{[["name","Name A–Z"],["newest","Newest"],["oldest","Oldest"],["year","Year"],["series","Series"]].map(([value,label])=><Pressable key={value} onPress={()=>setCatalogSort(value)} style={[styles.chip,catalogSort===value&&styles.chipActive]}><Text style={styles.chipText}>{label}</Text></Pressable>)}</ScrollView><ScrollView horizontal showsHorizontalScrollIndicator={false} style={{maxHeight:48,marginBottom:12}} contentContainerStyle={{gap:8,alignItems:'center'}}>{['All', ...Array.from(new Set(allProducts.map(p => p.series).filter(Boolean)))].map(s => <Pressable key={s} onPress={() => setSeriesFilter(s)} style={[styles.chip,seriesFilter===s && styles.chipActive]}><Text style={styles.chipText}>{s}</Text></Pressable>)}</ScrollView>{screen === 'Collection' && <View style={styles.filterRow}>{['All','Owned','Wanted','Favorites'].map(s => <Pressable key={s} onPress={() => setCollectionFilter(s)} style={[styles.chip,collectionFilter===s && styles.chipActive]}><Text style={styles.chipText}>{s}</Text></Pressable>)}</View>}{(screen === 'Collection' ? filteredCatalog.filter(p => collectionFilter === 'All' ? (isOwned(p) || isWanted(p) || isFavorite(p)) : (collectionFilter === 'Owned' && isOwned(p)) || (collectionFilter === 'Wanted' && isWanted(p)) || (collectionFilter === 'Favorites' && isFavorite(p))) : filteredCatalog).length ? (screen === 'Collection' ? filteredCatalog.filter(p => collectionFilter === 'All' ? (isOwned(p) || isWanted(p) || isFavorite(p)) : (collectionFilter === 'Owned' && isOwned(p)) || (collectionFilter === 'Wanted' && isWanted(p)) || (collectionFilter === 'Favorites' && isFavorite(p))) : filteredCatalog).map(p => <ProductRow key={productId(p)} item={p} onPress={() => {setSelectedProduct(p);setPreviousProductScreen(screen);setCode('');setScreen('Product');}} />) : <View style={styles.infoCard}><Text style={styles.productTitle}>{screen === 'Collection' ? 'Your collection is waiting' : 'No dolls found'}</Text><Text style={styles.body}>{screen==='Collection' ? 'Nothing matches this collection filter yet. Mark dolls as owned, wanted, or favorite after identifying them. Your saved dolls will appear here.' : 'Try another search. More verified catalog entries will be added over time.'}</Text></View>}</>}
               {screen === 'Product' && selectedProduct && <><TopBar title="DOLL DETAILS" onBack={() => setScreen(previousProductScreen)} /><View style={styles.resultHero}>{(photos[productId(selectedProduct)] || catalogImageFor(selectedProduct)) ? <Image source={{uri:photos[productId(selectedProduct)] || catalogImageFor(selectedProduct)}} style={styles.productPhoto} resizeMode="contain" onError={() => { if (!photos[productId(selectedProduct)]) markCatalogImageFailed(catalogImageFor(selectedProduct)); }} /> : <View style={styles.bigSkull}><Text style={styles.bigSkullText}>☠</Text><Text style={styles.bigBow}>♥</Text></View>}<Text style={styles.resultName}>{selectedProduct.name}</Text><Text style={styles.body}>{[selectedProduct.character,selectedProduct.series,selectedProduct.mattelCode].filter(Boolean).join(' • ')}</Text>{(releaseInfoForProduct(selectedProduct)?.releaseDate || selectedProduct.releaseDate) ? <Text style={styles.muted}>Release date: {formatReleaseDate(releaseInfoForProduct(selectedProduct)?.releaseDate || selectedProduct.releaseDate)}{releaseInfoForProduct(selectedProduct)?.status ? ' · ' + releaseInfoForProduct(selectedProduct).status : ''}</Text> : <Text style={styles.muted}>Release date: Not available from current sources</Text>}{!!selectedProduct.releaseYear && <Text style={styles.muted}>Release year: {selectedProduct.releaseYear}</Text>}{(selectedProduct.codes||[]).map(c => <Text key={c.type+c.value} style={styles.muted}>{c.type.toUpperCase()}: {c.value}</Text>)}</View><View style={styles.actionGrid}><Btn label={isOwned(selectedProduct)?'✓ OWNED — TAP TO REMOVE':'+ OWNED'} kind="teal" onPress={() => updateStatus(selectedProduct,'owned')} /><Btn label={isWanted(selectedProduct)?'♡ WANTED — TAP TO REMOVE':' + WISHLIST'} kind="purple" onPress={() => updateStatus(selectedProduct,'wanted')} /><Btn label={isFavorite(selectedProduct)?'♥ FAVORITE':'♡ FAVORITE'} kind="outline" onPress={() => toggle(setFavorites,favorites,selectedProduct)} /></View><Btn label="ADD / CHANGE PRODUCT PHOTO" kind="outline" onPress={() => askForProductPhoto(productId(selectedProduct))} /><TextInput value={notes[productId(selectedProduct)] || ''} onChangeText={v => setNotes(prev => ({...prev,[productId(selectedProduct)]:v}))} placeholder="Private notes about this doll…" placeholderTextColor="#988ba3" style={[styles.input,{minHeight:76,textAlignVertical:'top'}]} multiline /><Btn label="VIEW EBAY SOLD LISTINGS ↗" kind="teal" onPress={() => openUrl(ebaySoldSearch(selectedProduct, selectedProduct.mattelCode))} />{officialUrlForProduct(selectedProduct) ? <Btn label={officialUrlLabelForProduct(selectedProduct)} onPress={() => openUrl(officialUrlForProduct(selectedProduct))} /> : null}<Btn label="SEARCH OFFICIAL MATTEL SITES ↗" onPress={() => openUrl(searchMattel(selectedProduct.mattelCode || selectedProduct.name))} /><Btn label="SEARCH MATTEL PRODUCT SUPPORT ↗" kind="outline" onPress={() => openUrl(searchMattelSupport(selectedProduct.mattelCode || selectedProduct.name))} />{selectedProduct.referenceUrl && !selectedProduct.referenceUrl.includes("Special:Search") ? <Btn label="MONSTER HIGH WIKI ARTICLE ↗" kind="outline" onPress={() => openUrl(selectedProduct.referenceUrl)} /> : null}{releaseInfoForProduct(selectedProduct)?.wikiUrl ? <Btn label="RELEASE DETAILS ON WIKI ↗" kind="outline" onPress={() => openUrl(releaseInfoForProduct(selectedProduct).wikiUrl)} /> : null}<Btn label="SEARCH MONSTER HIGH WIKI ↗" kind="outline" onPress={() => openUrl(searchWiki((selectedProduct.mattelCode ? selectedProduct.mattelCode + ' ' : '') + selectedProduct.name))} />{releaseInfoForProduct(selectedProduct)?.sourceUrl ? <Btn label="VIEW RELEASE DATE SOURCE ↗" kind="outline" onPress={() => openUrl(releaseInfoForProduct(selectedProduct).sourceUrl)} /> : null}<Btn label="SEARCH EBAY LISTINGS ↗" kind="teal" onPress={() => openUrl(searchEbay(selectedProduct.mattelCode || selectedProduct.name))} /><Btn label="GOOGLE WEB SEARCH ↗" kind="outline" onPress={() => openUrl(searchWeb(selectedProduct.mattelCode || selectedProduct.name))} />{(selectedProduct.sourceUrls || []).map((sourceUrl, sourceIndex) => <Btn key={sourceUrl + sourceIndex} label={'ONLINE SOURCE ' + (sourceIndex + 1) + ' ↗'} kind="outline" onPress={() => openUrl(sourceUrl)} />)}</>}
               {screen === 'WebSearch' && <><TopBar title={webSearchTitle || 'WEB SEARCH'} onBack={() => setScreen('Result')} /><View style={styles.unverifiedBanner}><Text style={styles.unverifiedFlag}>⚠ EXTERNAL RESULTS · UNVERIFIED</Text><Text style={styles.unverifiedText}>These are live third-party search pages. Ghoul ID also tries to read accessible public search-page HTML and rank candidate names, but some websites block automated reading. Nothing is confirmed until you choose a candidate.</Text></View><View style={{flex:1,minHeight:420,borderRadius:12,overflow:'hidden',backgroundColor:'#fff'}}><WebView source={{uri:webSearchUrl}} style={{flex:1}} startInLoadingState renderLoading={() => <View style={styles.loadingBox}><ActivityIndicator size="large" color={PINK} /><Text style={styles.body}>Loading web results…</Text></View>} onError={() => Alert.alert('Search could not load', 'This website may block embedded browsers. Open the search externally instead.', [{text:'Open in browser',onPress:()=>openUrl(webSearchUrl)},{text:'Cancel',style:'cancel'}])} /></View><Btn label="OPEN THIS SEARCH IN BROWSER ↗" kind="outline" onPress={() => openUrl(webSearchUrl)} /><Btn label="SAVE CODE AS UNVERIFIED WISHLIST ITEM" kind="purple" onPress={() => { setScreen('Result'); saveUnknownToCollection('wanted'); }} /></>}
               {screen === 'Discoveries' && <><TopBar title="NEW WIKI DISCOVERIES" onBack={goHome} /><View style={styles.unverifiedBanner}><Text style={styles.unverifiedFlag}>⚠ NEEDS VERIFICATION</Text><Text style={styles.unverifiedText}>These are automatically discovered Wiki index candidates, not verified catalog entries. The source may contain incomplete or ambiguous rows. Confirm product identity before treating an item as correct.</Text></View><Btn label="REFRESH DISCOVERY LIST" kind="teal" onPress={() => refreshRemoteCatalog(true)} />{discoveryItems.length ? discoveryItems.slice(0,250).map((item,i)=><View key={item.candidateId||item.mattelCodeCandidate+i} style={styles.infoCard}><Text style={styles.productTitle}>{item.name || 'Unnamed Wiki candidate'}</Text><Text style={styles.muted}>Possible Mattel code: {item.mattelCodeCandidate || 'Not identified'}</Text><Text style={styles.muted}>Status: not verified; not yet in main catalog</Text><Btn label="OPEN WIKI SOURCE ↗" kind="outline" onPress={() => openUrl(item.wikiUrl || 'https://monsterhigh.fandom.com/wiki/Product_number')} /><Btn label="ADD PROVISIONALLY TO WISHLIST" kind="purple" onPress={() => saveCandidateToWishlist(item)} /></View>) : <View style={styles.infoCard}><Text style={styles.productTitle}>No discovery queue downloaded</Text><Text style={styles.body}>The daily GitHub workflow must run successfully and publish catalog-discovery.json. Until then, the built-in catalog remains available.</Text><Btn label="OPEN MONSTER HIGH WIKI INDEX ↗" onPress={() => openUrl('https://monsterhigh.fandom.com/wiki/Product_number')} /></View>}</>}
