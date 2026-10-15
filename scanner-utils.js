@@ -11,8 +11,10 @@ function isValidGtin(value) {
 function parseBarcodeCandidate(value) {
   const raw = String(value ?? '').trim();
   const digits = raw.replace(/\D/g, '');
-  if (![8, 12, 13, 14].includes(digits.length)) return null;
-  return { raw, digits, checksumValid: isValidGtin(digits) };
+  if (![12, 13, 14].includes(digits.length)) return null;
+  const checksumValid = isValidGtin(digits);
+  if (!checksumValid) return null;
+  return { raw, digits, checksumValid: true };
 }
 
 function getBarcodeBounds(event) {
