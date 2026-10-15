@@ -385,7 +385,7 @@ function AppContent() {
     const previous = barcodeSeenRef.current.get(key);
     const firstSeen = previous && now - previous.lastSeen <= 2000 ? previous.firstSeen : now;
     barcodeSeenRef.current.set(key, { value: digits, bounds: bounds || previous?.bounds || null, lastSeen: now, firstSeen });
-    setScannerStatus(`Detected ${digits}${parsed.checksumValid ? '' : ' (checksum warning — still allowing lookup)'}. Hold it steady for ${scanDelayMs} ms.`);
+    setScannerStatus(`Live camera detected ${digits}${bounds ? ' with position data' : ' (position unavailable; using selectable yellow label)'}${parsed.checksumValid ? '' : ' — checksum warning, lookup still allowed'}. Hold steady for ${scanDelayMs} ms.`);
     setBarcodeCandidates(old => {
       const found = old.find(x => x.normalized === key);
       if (found) return old.map(x => x.normalized === key ? { ...x, value: digits, bounds: bounds || x.bounds, lastSeen: now, checksumValid: parsed.checksumValid } : x);
@@ -592,15 +592,26 @@ function AppContent() {
             <View style={styles.scanTop}><Pressable onPress={goHome}><Text style={styles.navText}>‹ BACK</Text></Pressable><Text style={styles.screenTitle}>SCAN AN ITEM</Text><View style={{width:50}} /></View>
             <View style={styles.cameraFrame} onLayout={e => setCameraLayout(e.nativeEvent.layout)}>
               {permission?.granted ? <CameraView ref={cameraRef} style={styles.camera} facing="back" enableTorch={torch} barcodeScannerSettings={{ barcodeTypes: ['upc_a', 'upc_e', 'ean13', 'ean8', 'itf14', 'code128', 'code39'] }} onBarcodeScanned={handleBarcodeDetected} onMountError={event => setScannerStatus('Camera preview error: ' + String(event?.message || 'unknown camera error'))} /> : <View style={styles.permissionBox}><Text style={styles.body}>Camera access is needed to scan barcodes.</Text><Btn label="ALLOW CAMERA" onPress={requestPermission} /></View>}
-              {barcodeCandidates.map(item => {
+              {barcodeCandidates.map((item, index) => {
                 const origin = item.bounds?.origin || item.bounds?.boundingBox?.origin || (Number.isFinite(Number(item.bounds?.x)) ? { x: item.bounds.x, y: item.bounds.y } : null);
                 const size = item.bounds?.size || item.bounds?.boundingBox?.size || (Number.isFinite(Number(item.bounds?.width)) ? { width: item.bounds.width, height: item.bounds.height } : null);
-                if (!origin || !size || !cameraLayout.width || !cameraLayout.height) return null;
-                const left = Math.max(0, Math.min(cameraLayout.width - 36, Number(origin.x) || 0));
-                const top = Math.max(0, Math.min(cameraLayout.height - 36, Number(origin.y) || 0));
-                const width = Math.max(42, Math.min(cameraLayout.width, Number(size.width) || 42));
-                const height = Math.max(28, Math.min(cameraLayout.height, Number(size.height) || 28));
-                return <Pressable key={item.normalized} onPress={() => item.stable && setSelectedBarcode(item.normalized)} style={[styles.barcodeOverlay,{left,top,width,height,borderColor:selectedBarcode===item.normalized?'#ffe66d':'#facc15',backgroundColor:selectedBarcode===item.normalized?'rgba(250,204,21,0.22)':'rgba(250,204,21,0.08)'}]}><Text numberOfLines={1} style={styles.barcodeOverlayText}>{item.stable ? (selectedBarcode===item.normalized?'✓ ':'') + item.value : 'WAIT…'}</Text></Pressable>;
+                if (!cameraLayout.width || !cameraLayout.height) return null;
+                // Some Android camera backends report data/type but omit bounds.
+                // Keep every detected code selectable with a visible yellow fallback
+                // card instead of silently rendering no overlay. Real bounds are used
+                // when they fit the preview coordinate space.
+                const hasBounds = !!(origin && size);
+                const rawX = hasBounds ? Number(origin.x) : NaN;
+                const rawY = hasBounds ? Number(origin.y) : NaN;
+                const rawW = hasBounds ? Number(size.width) : NaN;
+                const rawH = hasBounds ? Number(size.height) : NaN;
+                const boundsFitPreview = hasBounds && rawX >= 0 && rawY >= 0 && rawX < cameraLayout.width && rawY < cameraLayout.height && rawW > 0 && rawH > 0 && rawW <= cameraLayout.width && rawH <= cameraLayout.height;
+                const fallbackWidth = Math.min(168, Math.max(112, cameraLayout.width * 0.42));
+                const width = boundsFitPreview ? Math.max(42, Math.min(cameraLayout.width, rawW)) : fallbackWidth;
+                const height = boundsFitPreview ? Math.max(28, Math.min(cameraLayout.height, rawH)) : 42;
+                const left = boundsFitPreview ? Math.max(0, Math.min(cameraLayout.width - width, rawX)) : Math.max(0, Math.min(cameraLayout.width - width, (cameraLayout.width - width) / 2));
+                const top = boundsFitPreview ? Math.max(0, Math.min(cameraLayout.height - height, rawY)) : Math.max(8, Math.min(cameraLayout.height - height, cameraLayout.height * 0.28 + (index % 4) * (height + 8)));
+                return <Pressable key={item.normalized} onPress={() => item.stable && setSelectedBarcode(item.normalized)} style={[styles.barcodeOverlay,{left,top,width,height,borderColor:selectedBarcode===item.normalized?'#ffe66d':'#facc15',backgroundColor:selectedBarcode===item.normalized?'rgba(250,204,21,0.22)':'rgba(250,204,21,0.08)'}]}><Text numberOfLines={1} style={styles.barcodeOverlayText}>{item.stable ? (selectedBarcode===item.normalized?'✓ ':'') + item.value : 'WAIT…'}</Text>{!boundsFitPreview ? <Text numberOfLines={1} style={styles.muted}>Detected code</Text> : null}</Pressable>;
               })}
               <View pointerEvents="none" style={styles.scanCorners}><View style={[styles.corner,styles.c1]}/><View style={[styles.corner,styles.c2]}/><View style={[styles.corner,styles.c3]}/><View style={[styles.corner,styles.c4]}/></View>
             </View>
