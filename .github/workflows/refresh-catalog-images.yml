@@ -1,0 +1,62 @@
+name: Refresh catalog product images
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'catalog.json'
+      - 'scripts/enrich_catalog_images.py'
+      - '.github/workflows/refresh-catalog-images.yml'
+  schedule:
+    - cron: '17 11 * * 1'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: catalog-image-refresh-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  enrich-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install parser
+        run: python -m pip install beautifulsoup4
+      - name: Find official Mattel images, then Wiki fallbacks
+        run: python scripts/enrich_catalog_images.py
+      - name: Report image coverage
+        run: |
+          python - <<'PY'
+          import json
+          catalog = json.load(open('catalog.json', encoding='utf-8'))
+          total = len(catalog)
+          official = sum(bool(p.get('officialImageUrl')) for p in catalog)
+          wiki = sum(bool(p.get('wikiImageUrl')) for p in catalog)
+          selected = sum(bool(p.get('imageUrl')) for p in catalog)
+          print(f'Catalog entries: {total}')
+          print(f'Official Mattel images: {official}')
+          print(f'Wiki fallback images: {wiki}')
+          print(f'Entries with a selected image: {selected}/{total}')
+          with open('image-coverage.json', 'w', encoding='utf-8') as f:
+              json.dump({'catalogEntries': total, 'officialImages': official, 'wikiImages': wiki, 'entriesWithImage': selected}, f, indent=2)
+          PY
+      - name: Commit image URL updates
+        run: |
+          if ! git diff --quiet -- catalog.json image-coverage.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add catalog.json image-coverage.json
+            git commit -m 'Refresh official and Wiki catalog image URLs'
+            git push
+          else
+            echo 'No image URL changes found.'
+          fi
