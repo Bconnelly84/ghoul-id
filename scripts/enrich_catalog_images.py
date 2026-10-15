@@ -12,6 +12,7 @@ import time
 from datetime import datetime, timezone
 from urllib.parse import urlencode, urlparse, urljoin
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 from bs4 import BeautifulSoup
 
 CATALOG = 'catalog.json'
@@ -39,6 +40,33 @@ def clean_image_url(value):
     if any(token in value.lower() for token in ('logo', 'avatar', 'favicon', 'placeholder', 'icon-')):
         return None
     return value
+
+
+
+def image_url_is_broken(url):
+    """Return True only for a definite dead/non-image URL; None for transient failures."""
+    if not url:
+        return False
+    try:
+        request = Request(url, headers={
+            'User-Agent': UA,
+            'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+            'Range': 'bytes=0-0',
+        })
+        with urlopen(request, timeout=10) as response:
+            content_type = (response.headers.get('Content-Type') or '').lower()
+            if response.status in (404, 410):
+                return True
+            if content_type and not (content_type.startswith('image/') or 'octet-stream' in content_type):
+                return True
+            return False
+    except HTTPError as exc:
+        if exc.code in (404, 410):
+            return True
+        return None
+    except Exception:
+        # A timeout, rate limit, or bot block is not enough evidence to discard a known URL.
+        return None
 
 
 def image_from_official_page(url):
@@ -134,37 +162,51 @@ def image_from_official_search(product):
     return None
 
 def image_from_wiki(product):
+    """Find a product-specific Wiki page image; reject unrelated search-result thumbnails."""
     title = str(product.get('name') or '').strip()
+    character = str(product.get('character') or '').strip()
     code = str(product.get('mattelCode') or '').strip()
-    if not title and not code:
+    if not title and not character and not code:
         return None
-    query = 'Monster High ' + (code + ' ' if code else '') + title
-    params = urlencode({
-        'action': 'query', 'format': 'json', 'generator': 'search',
-        'gsrsearch': query, 'gsrnamespace': 0, 'gsrlimit': 5,
-        'prop': 'pageimages', 'piprop': 'original|thumbnail', 'pithumbsize': 700,
-    })
-    api = 'https://monsterhigh.fandom.com/api.php?' + params
-    try:
-        data = json.loads(fetch(api, 'application/json'))
-    except Exception as exc:
-        print(f'Wiki image lookup failed for {title or code}: {exc}', file=sys.stderr)
-        return None
-    pages = (data.get('query') or {}).get('pages') or {}
-    candidates = []
-    for page in pages.values():
-        image = page.get('original') or page.get('thumbnail') or {}
-        url = clean_image_url(image.get('source'))
-        page_title = str(page.get('title') or '').lower()
-        # Prefer an article title with the Mattel code or a distinctive title token.
-        title_tokens = [t for t in re.findall(r'[a-z0-9]+', title.lower()) if len(t) > 3]
-        overlap = sum(1 for token in title_tokens if token in page_title)
-        if code and code.lower() in page_title:
-            overlap += 5
-        if url:
-            candidates.append((overlap, url))
-    candidates.sort(reverse=True)
-    return candidates[0][1] if candidates else None
+
+    title_tokens = [t for t in re.findall(r'[a-z0-9]+', (title + ' ' + character).lower()) if len(t) > 3 and t not in {'monster', 'high', 'doll', 'with', 'accessories', 'accessory'}]
+    queries = []
+    if code:
+        queries.append('"' + code + '" Monster High')
+    if title:
+        queries.append('"' + title + '"')
+    if character:
+        queries.append('"' + character + '" Monster High doll')
+
+    best = None
+    for query in queries:
+        params = urlencode({
+            'action': 'query', 'format': 'json', 'generator': 'search',
+            'gsrsearch': query, 'gsrnamespace': 0, 'gsrlimit': 8,
+            'prop': 'pageimages', 'piprop': 'original|thumbnail', 'pithumbsize': 700,
+        })
+        api = 'https://monsterhigh.fandom.com/api.php?' + params
+        try:
+            data = json.loads(fetch(api, 'application/json'))
+        except Exception as exc:
+            print(f'Wiki image lookup failed for {title or code}: {exc}', file=sys.stderr)
+            continue
+        pages = (data.get('query') or {}).get('pages') or {}
+        for page in pages.values():
+            image = page.get('original') or page.get('thumbnail') or {}
+            url = clean_image_url(image.get('source'))
+            page_title = str(page.get('title') or '').lower()
+            overlap = sum(1 for token in title_tokens if token in page_title)
+            if code and code.lower() in page_title:
+                overlap += 5
+            # A candidate needs a product-specific title match; don't use generic wiki images.
+            if url and overlap >= (1 if len(title_tokens) <= 1 else 2):
+                score = overlap + (2 if 'doll' in page_title else 0)
+                if best is None or score > best[0]:
+                    best = (score, url)
+        if best and best[0] >= 5:
+            break
+    return best[1] if best else None
 
 
 def main():
@@ -178,7 +220,14 @@ def main():
         if not isinstance(product, dict):
             continue
         checked += 1
-        # Keep known good source URLs; retry only missing values to limit requests.
+        # Refresh URLs that are definitely dead. Preserve URLs during transient blocks/timeouts.
+        for field in ('officialImageUrl', 'wikiImageUrl'):
+            existing = product.get(field)
+            if existing and image_url_is_broken(existing) is True:
+                print(f'Removing dead {field} for {product.get("name", product.get("id", "product"))}', file=sys.stderr)
+                product.pop(field, None)
+                updated += 1
+
         if not product.get('officialImageUrl'):
             official = image_from_official_page(product.get('officialUrl'))
             if not official:
@@ -193,7 +242,7 @@ def main():
                 product['wikiImageUrl'] = wiki
                 wiki_count += 1
                 updated += 1
-        # Official source wins; Wiki is only the contingency image.
+        # Official source wins; Wiki is the explicit fallback when official is absent.
         selected = product.get('officialImageUrl') or product.get('wikiImageUrl')
         if selected and product.get('imageUrl') != selected:
             product['imageUrl'] = selected
