@@ -11,12 +11,14 @@ assert.doesNotMatch(app, /setInterval\s*\([\s\S]{0,160}runLiveOcr/, 'No periodic
 assert.match(app, /SCAN_DELAY_OPTIONS\s*=\s*\[500, 900, 1500, 2000\]/, 'Delay choices should be configurable');
 assert.match(app, /scannerStatus/, 'Scanner must show diagnostic status');
 assert.match(app, /getBarcodeBounds\(event\)/, 'Scanner must normalize camera bounds/corner points');
+assert.match(app, /position unavailable; using selectable yellow label/, 'Missing camera bounds must still show a selectable fallback overlay');
+assert.match(app, /boundsFitPreview/, 'Overlay bounds must be checked against camera preview dimensions');
 assert.match(app, /PHOTO FALLBACK: READ PRINTED TEXT/, 'OCR should remain an explicit fallback');
-assert.match(app, /barcodeCandidates\.map\(item =>/, 'Multiple barcode candidates should be rendered');
+assert.match(app, /barcodeCandidates\.map\(\(item, index\) =>/, 'Multiple barcode candidates should be rendered');
 assert.match(app, /item\.stable && setSelectedBarcode\(item\.normalized\)/, 'Candidates should require stability before selection');
-assert.strictEqual(pkg.version, '2.7.0');
-assert.strictEqual(expo.expo.version, '2.7.0');
-assert.strictEqual(expo.expo.android.versionCode, 18);
+assert.strictEqual(pkg.version, '2.7.1');
+assert.strictEqual(expo.expo.version, '2.7.1');
+assert.strictEqual(expo.expo.android.versionCode, 19);
 
 assert.deepStrictEqual(parseBarcodeCandidate('194735256648'), {raw:'194735256648', digits:'194735256648', checksumValid:true});
 // Invalid check digits are still offered for lookup instead of silently discarded.
